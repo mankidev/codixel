@@ -46,9 +46,17 @@ Left: the AI drew the dragon from scratch. Right: the AI turned a reference imag
 
 ## Example: mini characters
 
-![Mini characters](images/fighters.gif)
+![Mini characters](images/minis.gif)
 
-![Mini characters fighting](images/fighters_battle.gif)
+## Example: bullet hell
+
+![Hollowchain](images/hollowchain.gif)
+
+## Example: ocean
+
+![Ocean, before and after "make it more realistic"](images/ocean_before_after.png)
+
+Before and after asking for "more realistic".
 
 ## Rule: never "do this" and walk away
 

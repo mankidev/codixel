@@ -2,14 +2,16 @@
 
 # pixel-art-with-ai
 
-Claude Code skill for making pixel art with AI. It covers how to describe what you want, how to get from AI output to clean pixels, and why you have to check every step.
+Claude Code skill for making pixel art with AI. It covers how to describe what you want, the steps from reference to finished sprite, and why you have to check every step.
 
 ![Heirs of the Valley, first look vs now](images/hotv_before_after.png)
 
+![Step by step](images/god_steps.png)
+
 ## What's inside
 
-- **Describe with shapes.** AI writes code; it does not paint. A house is a square and a triangle, a tree is a circle on a rectangle.
-- **From AI output to pixel art.** Snap to the grid, cut the palette, clean up stray pixels.
+- **Describe with shapes.** AI writes code; it does not paint. A castle is a square, four cones and a triangle roof.
+- **Step by step.** Reference, compose, rig, pixelate, animate, put it in the scene.
 - **Check every step.** Look at each result before moving on, and say what is wrong when it is wrong.
 
 The full text is in [SKILL.md](SKILL.md).

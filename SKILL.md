@@ -1,14 +1,10 @@
 ---
 name: pixel-art-with-ai
-description: Short workflow for making clean pixel art with AI image models. Use when the user wants sprites, icons or tiles made with AI and needs them to be real pixel art (on a grid, small palette, transparent background).
+description: Short workflow for making pixel art with an AI coding assistant. Use when the user wants sprites, characters, icons or tiles drawn in code as pixel art, and the result has to match what they asked for.
 license: MIT
 ---
 
 # Pixel art with AI
-
-![Pipeline](images/pipeline.png)
-
-AI image models draw things that look like pixel art but are not. The pixels are blurry, off-grid and full of in-between colors. The work is turning that into real pixels.
 
 ## AI is not a painter
 
@@ -16,14 +12,20 @@ AI image models draw things that look like pixel art but are not. The pixels are
 
 **AI CANNOT DRAW PIXEL ART FROM SCRATCH LIKE A PAINTER. IT ONLY WRITES CODE. SO DESCRIBE WHAT YOU WANT WITH SIMPLE SHAPES: SQUARE, CIRCLE, TRIANGLE.**
 
-A house is a square with a triangle on top. A tree is a circle on a rectangle. Get the shapes right first, then ask for colors, shading and small details.
+A castle is a square with four cones on the corners and a triangle roof in the middle. Get the shapes right first, then ask for colors, shading and small details.
 
 ## Steps
 
-1. **Prompt with a fixed template and a grid.** Keep one prompt template and change only the subject. Give the model a grid reference image so it knows the target size.
-2. **Generate big.** Let the model draw at its normal resolution. Expect blur, noise and fake pixels.
-3. **Snap to the grid.** Scale down to the real size (16x16, 32x32...) with nearest-neighbor, cut the palette to a few colors, make the background transparent.
-4. **Check and fix.** Look at it at 1x and zoomed in. Remove stray pixels, fix the outline, drop anything that does not fit the size.
+![Step by step](images/god_steps.png)
+
+1. **Reference.** Collect a few real images of what you want.
+2. **Compose.** Have the AI place the parts in code at full size.
+3. **Rig.** Give moving parts simple bones so they can be posed.
+4. **Pixelate.** Bring it down to the real size with a few colors per material, flat bands and a narrow dither where two bands meet.
+5. **Animate.** Make the frames and look at them one by one.
+6. **Put it in the scene.** Check it next to everything else, at the real size.
+
+![Result](images/god.gif)
 
 ## Example: Heirs of the Valley
 
@@ -39,7 +41,7 @@ The first version next to the latest version of the game. Everything between the
 
 After every step, look at the result:
 
-- Is it on the grid, at the right size?
+- Is it at the right size, on the pixel grid?
 - Are the colors the palette you asked for?
 - Is it the thing you asked for, in the style you asked for?
 

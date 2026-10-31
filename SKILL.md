@@ -54,11 +54,25 @@ For simple objects drawn directly in code, also start with two or three candidat
 
 Build on the one the user picks. If they like parts of different candidates, combine those parts and show it again.
 
-## 4. Characters
+## 4. Effects (fire, smoke, beams, explosions)
+
+Effects are not drawn from a reference. You build them in code, frame by frame:
+
+- Give every pixel a value: heat for fire, density for smoke, brightness for light. Get it from noise that moves over time.
+- Turn the value into a color with a ramp from dark to bright, ending in white for the hottest or brightest part.
+- Where two colors of the ramp meet, mix them with a dither pattern instead of a hard edge.
+- Add sparks and small particles that fly out and fade.
+- For fire that flows, like a dragon breathing, use a heat grid that spreads forward each frame and cools down, the way old Doom fire works.
+- For explosions: gather energy first, then a flash, shock rings, and smoke that rises and slowly thins out.
+- For beams: show thin warning lines first, then the bright beam.
+
+Ask the user what the effect should feel like and if they have an example (a game, a video, a picture), then show two or three candidates as short animations and let them pick. Change speed, size, color and brightness only when the user asks.
+
+## 5. Characters
 
 Build characters from only a few pixels. Small characters look good, big detailed ones look bad. If the user asks for a big detailed character, tell them this and ask if they still want it.
 
-## 5. Check before you show
+## 6. Check before you show
 
 - Render an image or frames and look at them yourself before showing the user.
 - Never say a step is done without looking at the result.

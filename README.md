@@ -1,3 +1,5 @@
+<p align="center"><img src="images/logo.png" width="128" alt="pixel-art-with-ai logo"></p>
+
 # pixel-art-with-ai
 
 Claude Code skill for making pixel art with AI. It covers how to describe what you want, how to get from AI output to clean pixels, and why you have to check every step.

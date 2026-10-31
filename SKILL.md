@@ -21,6 +21,10 @@ Get the shapes right first, then ask for the details.
 5. **Animate.** Look at the frames one by one.
 6. **Put it in the scene.** Check it next to everything else.
 
+## Characters
+
+Build characters from only a few pixels so they don't look bad.
+
 ## Rule: never "do this" and walk away
 
 **Never tell the AI "do this" and leave it. Check it the whole time it works and make sure what you get is what you wanted.**

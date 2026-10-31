@@ -48,6 +48,8 @@ Left: the AI drew the dragon from scratch. Right: the AI turned a reference imag
 
 ![Mini characters](images/minis.gif)
 
+Build characters from only a few pixels so they don't look bad.
+
 ## Example: bullet hell
 
 ![Hollowchain](images/hollowchain.gif)

@@ -29,7 +29,7 @@ A house is a square with a triangle on top. A tree is a circle on a rectangle. G
 
 ![Heirs of the Valley, first look vs now](images/hotv_before_after.png)
 
-The first mockup next to the latest version of the game. Everything between the two came from small steps, each one checked before the next.
+The first version next to the latest version of the game. Everything between the two came from small steps, each one checked before the next.
 
 ## Rule: never "do this" and walk away
 

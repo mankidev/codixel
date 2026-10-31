@@ -8,7 +8,7 @@ license: MIT
 
 ## AI is not a painter
 
-**AI CANNOT DRAW PIXEL ART FROM SCRATCH LIKE A PAINTER. IT ONLY WRITES CODE. SO DESCRIBE WHAT YOU WANT WITH SIMPLE SHAPES: SQUARE, CIRCLE, TRIANGLE.**
+**AI cannot draw pixel art from scratch like a painter. It only writes code, so describe what you want with simple shapes: square, circle, triangle.**
 
 Get the shapes right first, then ask for the details.
 
@@ -23,7 +23,7 @@ Get the shapes right first, then ask for the details.
 
 ## Rule: never "do this" and walk away
 
-**NEVER TELL THE AI "DO THIS" AND LEAVE IT. CHECK IT THE WHOLE TIME IT WORKS AND MAKE SURE WHAT YOU GET IS WHAT YOU WANTED.**
+**Never tell the AI "do this" and leave it. Check it the whole time it works and make sure what you get is what you wanted.**
 
 After every step, look at the result:
 

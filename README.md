@@ -6,11 +6,22 @@ Claude Code skill for making pixel art with AI. It covers how to describe what y
 
 ## AI is not a painter
 
-**AI CANNOT DRAW PIXEL ART FROM SCRATCH LIKE A PAINTER. IT ONLY WRITES CODE. SO DESCRIBE WHAT YOU WANT WITH SIMPLE SHAPES: SQUARE, CIRCLE, TRIANGLE.**
+**AI cannot draw pixel art from scratch like a painter. It only writes code, so describe what you want with simple shapes: square, circle, triangle.**
 
 ![Kinryu, drawn from scratch vs from a reference](images/kinryu_old_new.png)
 
 Left: the AI drew the dragon from scratch. Right: the AI turned a reference image into pixels and moved it.
+
+## Example: Kinryu
+
+![Kinryu, step by step](images/kinryu_steps.png)
+
+1. **Reference.** One still of a golden dragon.
+2. **Pixelate.** Remove the background and turn it into pixels.
+3. **Rig.** Find the spine from head to tail and move the body along it.
+4. **Put it in the scene.** The dragon comes down from the sky, roars and breathes fire.
+
+![Kinryu animation](images/kinryu.gif)
 
 ## Steps
 
@@ -27,16 +38,11 @@ Left: the AI drew the dragon from scratch. Right: the AI turned a reference imag
 
 ![God battle](images/god_battle.gif)
 
-## Example: Kinryu
+## Example: effects
 
-![Kinryu, step by step](images/kinryu_steps.png)
+![Green flame](images/green_flame.gif)
 
-1. **Reference.** One still of a golden dragon.
-2. **Pixelate.** Remove the background and turn it into pixels.
-3. **Rig.** Find the spine from head to tail and move the body along it.
-4. **Put it in the scene.** The dragon comes down from the sky, roars and breathes fire.
-
-![Kinryu animation](images/kinryu.gif)
+![Golden dragon](images/kouryu.gif)
 
 ## Example: mini characters
 
@@ -46,7 +52,7 @@ Left: the AI drew the dragon from scratch. Right: the AI turned a reference imag
 
 ## Rule: never "do this" and walk away
 
-**NEVER TELL THE AI "DO THIS" AND LEAVE IT. CHECK IT THE WHOLE TIME IT WORKS AND MAKE SURE WHAT YOU GET IS WHAT YOU WANTED.**
+**Never tell the AI "do this" and leave it. Check it the whole time it works and make sure what you get is what you wanted.**
 
 ![Heirs of the Valley, first version vs now](images/hotv_before_after.png)
 

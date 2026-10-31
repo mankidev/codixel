@@ -1,36 +1,38 @@
 ---
 name: codixel
-description: Short workflow for making pixel art with an AI coding assistant. Use when the user wants sprites, characters, icons or tiles drawn in code as pixel art, and the result has to match what they asked for.
+description: Workflow for making pixel art in code together with the user, step by step, from a real reference image to an animated sprite in the scene. Use when the user asks for pixel art sprites, characters, creatures, effects or scenes.
 license: MIT
 ---
 
-# Pixel art with AI
+# Codixel
 
-## AI is not a painter
+You cannot draw pixel art from scratch like a painter. You write code. Drawings you make up from nothing come out wrong, so work from real images and let the user steer every step.
 
-**AI cannot draw pixel art from scratch like a painter. It only writes code.**
+## Start from a reference
+
+- Ask the user for a real image of what they want, or use the one they gave.
+- If they have none, say that a reference will look much better than drawing from nothing, and ask before drawing from scratch.
 
 ## Steps
 
-1. Find real images of what you want.
-2. Have the AI put it together in code from those images.
-3. Ask for bones so the parts can move.
-4. Ask for pixel art and say how it should look, for example "realistic".
-5. Look at the animation frames one by one.
-6. Put it in the scene and check it next to everything else.
+Do one step, show the result, wait for the user. Move on only when they say it is right.
+
+1. Remove the background from the reference so only the subject is left.
+2. Turn it into pixels at the size the user wants.
+3. If it moves, find its skeleton (spine, wings, limbs) and give it bones.
+4. Animate it with the bones.
+5. Put it in the scene and show it next to everything else.
+
+When the user says how it should look, for example "realistic", do that and nothing more.
 
 ## Characters
 
-Build characters from only a few pixels so they don't look bad.
+Build characters from only a few pixels. Small characters look good, big detailed ones look bad.
 
-## Rule: never "do this" or "copy this" and walk away
+## Check every step
 
-**Never tell the AI "do this" or "copy this" and leave it. Check it the whole time it works and make sure what you get is what you wanted.**
-
-After every step, look at the result:
-
-- Is it the size you wanted?
-- Does it look the way you described it?
-- Is it the thing you asked for?
-
-If something is wrong, say exactly what is wrong and run the step again. Move on only when the step is right.
+- After each step, render an image or a few frames and look at them yourself before you show them.
+- Never say a step is done without having looked at the result.
+- Do only what the user asked. Do not add colors, effects, text, details or features they did not ask for.
+- When the user says something is wrong, change that one thing and show it again.
+- If the direction is unclear, make two or three options side by side and let the user pick.

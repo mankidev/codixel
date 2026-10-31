@@ -107,7 +107,7 @@ If something is wrong, say exactly what is wrong and run the step again. Move on
 git clone https://github.com/mankidev/codixel ~/.claude/skills/codixel
 ```
 
-Claude Code loads it on the next start. It runs when you ask for sprites, icons or tiles.
+Claude Code loads it on the next start. It runs when you ask for pixel art.
 
 ## License
 

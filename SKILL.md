@@ -6,7 +6,7 @@ license: MIT
 
 # Pixel art with AI
 
-![From AI output to real pixel art](images/pipeline.png)
+![Pipeline](images/pipeline.png)
 
 AI image models draw things that look like pixel art but are not. The pixels are blurry, off-grid and full of in-between colors. The work is turning that into real pixels.
 
@@ -33,7 +33,7 @@ The first mockup next to the latest version of the game. Everything between the 
 
 ## Rule: never "do this" and walk away
 
-![Left alone vs checked at every step](images/check.png)
+![Check every step](images/check.png)
 
 **NEVER TELL THE AI "DO THIS" AND LEAVE IT. CHECK IT THE WHOLE TIME IT WORKS AND MAKE SURE WHAT YOU GET IS WHAT YOU WANTED.**
 

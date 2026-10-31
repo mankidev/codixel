@@ -17,6 +17,7 @@ This skill comes with `core/pixel.js`, next to this file. Use it instead of writ
 - Color and noise: `P.palette(cols, n)`, `P.ramp`, `P.mix`, `P.ditherIndex`, `P.noise`, `P.fbm`, `P.rng(seed)`, `P.ease`.
 - `P.novaSmoke(buf, x, te, t, { front, fade, cols })`: big smoke explosion with gathering, light column, shock rings, rising dome and smoke clouds. Call it with `front: false` before drawing the subject and `front: true` after. Ground is at y = 0, up is negative. `te` is the time since the eruption.
 - `new P.Breath({ length, cols })`: fire breath from a mouth. Call `step(on, steps)` every frame and `draw(buf, hx, hy, aA, aB, t, open)` to draw it between the angles `aA` and `aB`.
+- `new P.HellFire(w, h, { cols })`: wall of fire rising from the bottom of the screen. Call `step(power, cool, steps)` every frame (`power` 0 to 1 feeds the bottom row, `cool` 1 to 3 makes it shorter) and `draw(buf)`.
 - `P.volley(t0, n, { w, h, safe })` and `P.beams(buf, list, t, cols)`: thin blinking warning lines, then bright beams with bloom and a screen flash.
 
 These are taken from finished games. Change colors, sizes and timing to fit the request, but keep the method.

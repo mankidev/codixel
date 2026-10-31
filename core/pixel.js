@@ -433,6 +433,59 @@ class Breath {
 }
 P.Breath = Breath;
 
+P.HELL_FIRE = [[30, 6, 6], [110, 18, 8], [180, 40, 10], [222, 80, 14], [244, 124, 22], [252, 172, 40], [255, 214, 90], [255, 244, 186], [255, 255, 255]];
+
+class HellFire {
+  constructor(w, h, opt = {}) {
+    this.w = w;
+    this.h = h;
+    this.a = new Uint8Array(w * h);
+    this.seed = opt.seed ?? 0x9e3779b9;
+    this.top = h;
+    this.pal = Array.from({ length: 37 }, (_, i) => P.col(P.ramp(opt.cols || P.HELL_FIRE, i / 36)));
+  }
+
+  step(power = 1, cool = 1, steps = 1) {
+    const W = this.w, H = this.h, a = this.a, src = Math.round(36 * P.clamp(power));
+    let sd = this.seed, top = this.top;
+    for (let s = 0; s < steps; s++) {
+      for (let x = 0; x < W; x++) {
+        sd ^= sd << 13; sd ^= sd >>> 17; sd ^= sd << 5;
+        a[(H - 1) * W + x] = Math.max(0, src - ((sd >>> 0) % 100 < 15 ? 6 : 0));
+      }
+      let newTop = H;
+      for (let y = Math.max(1, top - 1); y < H; y++) {
+        const row = y * W, up = row - W;
+        for (let x = 0; x < W; x++) {
+          const v = a[row + x];
+          if (v === 0) {
+            a[up + x] = a[up + x] && 0;
+            continue;
+          }
+          sd ^= sd << 13; sd ^= sd >>> 17; sd ^= sd << 5;
+          const rr = (sd >>> 0) % 6, r = rr % 3, dx = x + r - 1 < 0 ? 0 : x + r - 1 >= W ? W - 1 : x + r - 1;
+          const nv = v - ((r & 1) + (cool > 1 && rr >= 3 ? cool - 1 : 0));
+          a[up + dx] = nv > 0 ? nv : 0;
+          if (nv > 0 && y - 1 < newTop) newTop = y - 1;
+        }
+      }
+      top = newTop;
+    }
+    this.seed = sd;
+    this.top = top;
+  }
+
+  draw(buf) {
+    const W = this.w, H = this.h, a = this.a;
+    for (let j = Math.max(0, this.top - 1); j < Math.min(H, buf.h); j++)
+      for (let i = 0; i < Math.min(W, buf.w); i++) {
+        const v = a[j * W + i];
+        if (v > 4) buf.px[j * buf.w + i] = this.pal[v];
+      }
+  }
+}
+P.HellFire = HellFire;
+
 P.crc = (() => {
   const T = new Uint32Array(256);
   for (let n = 0; n < 256; n++) {

@@ -25,9 +25,9 @@ Get the shapes right first, then ask for the details.
 
 Build characters from only a few pixels so they don't look bad.
 
-## Rule: never "do this" and walk away
+## Rule: never "do this" or "copy this" and walk away
 
-**Never tell the AI "do this" and leave it. Check it the whole time it works and make sure what you get is what you wanted.**
+**Never tell the AI "do this" or "copy this" and leave it. Check it the whole time it works and make sure what you get is what you wanted.**
 
 After every step, look at the result:
 

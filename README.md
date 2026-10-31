@@ -11,7 +11,7 @@ Claude Code skill for making pixel art with AI. It covers how to describe what y
 - [Go step by step](#steps)
 - [Ask for how it should look, like "realistic"](#example-ocean)
 - [Build characters from only a few pixels](#example-mini-characters)
-- [Never say "do this" and walk away, check every step](#rule-never-do-this-and-walk-away)
+- [Never say "do this" or "copy this" and walk away, check every step](#rule-never-do-this-or-copy-this-and-walk-away)
 
 ## AI is not a painter
 
@@ -69,9 +69,9 @@ Build characters from only a few pixels so they don't look bad.
 
 Before and after asking for "more realistic".
 
-## Rule: never "do this" and walk away
+## Rule: never "do this" or "copy this" and walk away
 
-**Never tell the AI "do this" and leave it. Check it the whole time it works and make sure what you get is what you wanted.**
+**Never tell the AI "do this" or "copy this" and leave it. Check it the whole time it works and make sure what you get is what you wanted.**
 
 ![Heirs of the Valley, first version vs now](images/hotv_before_after.png)
 

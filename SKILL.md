@@ -30,17 +30,17 @@ If you do not know the size or where it will be used, ask that too:
 
 ## 2. Work from the reference, one step at a time
 
-Do one step, show the result as an image, and ask before going on.
+Do one step, show the result as an image, and ask before going on. Wherever there is a choice to make, show candidates instead of a single result: two or three versions side by side in one image, labeled A, B, C, and let the user pick.
 
 1. Remove the background so only the subject is left. Show it.
-2. Turn it into pixels at the size the user wants. Show it.
+2. Turn it into pixels at the size the user wants. Show two or three candidates (for example different sizes or amounts of detail) and let the user pick.
 3. If it moves, find its skeleton (spine, wings, legs) and give it bones. Show the bones on top of the sprite.
-4. Animate it with the bones. Show a few frames.
+4. Animate it with the bones. Show a few frames. If the motion could go different ways, show candidates.
 5. Put it in the scene. Show it next to everything else.
 
 After each step, ask something like:
 
-> "Here is the pixelated version. Does it look right, or should I change something?"
+> "Here are three versions, A, B and C. Which one do you want, or should I change something?"
 
 Go to the next step only when the user says it is right.
 
@@ -48,9 +48,11 @@ Go to the next step only when the user says it is right.
 
 When the user says how it should look, for example "realistic", do exactly that. Do not pick colors, palettes, effects or extra details the user did not ask for.
 
-If the direction is unclear, make two or three options side by side and ask:
+For simple objects drawn directly in code, also start with two or three candidates side by side and ask:
 
 > "Which one is closer to what you want?"
+
+Build on the one the user picks. If they like parts of different candidates, combine those parts and show it again.
 
 ## 4. Characters
 

@@ -61,11 +61,7 @@ Give the AI a reference to compare with. It understands much better what you wan
 
 Made with `core/pixel.js`, which comes with the skill, so the AI does not write effects from scratch.
 
-![Beams](images/core_beams.gif)
-
-![Smoke explosion](images/core_smoke.gif)
-
-![Fire breath](images/core_breath.gif)
+![Beams, smoke explosion and fire breath](images/core_effects.gif)
 
 ## Example: mini characters
 

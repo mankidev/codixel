@@ -45,6 +45,8 @@ If you do not know the size or where it will be used, ask that too:
 
 Do one step, show the result as an image, and ask before going on. Wherever there is a choice to make, show candidates instead of a single result: two or three versions side by side in one image, labeled A, B, C, and let the user pick.
 
+Always show the result next to the reference, so the user can compare the two.
+
 1. Remove the background so only the subject is left. Show it.
 2. Turn it into pixels at the size the user wants. Show two or three candidates (for example different sizes or amounts of detail) and let the user pick.
 3. If it moves, find its skeleton (spine, wings, legs) and give it bones. Show the bones on top of the sprite.

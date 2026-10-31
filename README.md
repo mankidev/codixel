@@ -4,6 +4,15 @@
 
 Claude Code skill for making pixel art with AI. It covers how to describe what you want, the steps from reference to finished sprite, and why you have to check every step.
 
+## What to do
+
+- [Describe it with simple shapes](#ai-is-not-a-painter)
+- [Start from a real reference image](#example-kinryu)
+- [Go step by step](#steps)
+- [Ask for how it should look, like "realistic"](#example-ocean)
+- [Build characters from only a few pixels](#example-mini-characters)
+- [Never say "do this" and walk away, check every step](#rule-never-do-this-and-walk-away)
+
 ## AI is not a painter
 
 **AI cannot draw pixel art from scratch like a painter. It only writes code, so describe what you want with simple shapes: square, circle, triangle.**

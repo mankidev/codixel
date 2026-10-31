@@ -75,6 +75,8 @@ Before and after asking for "more realistic".
 
 **Never tell the AI "do this" or "copy this" and leave it. Check it the whole time it works and make sure what you get is what you wanted.**
 
+While this README was being written, the AI added a lot of things I didn't ask for. That is why you should check every step.
+
 ![Heirs of the Valley, first version vs now](images/hotv_before_after.png)
 
 After every step, look at the result:

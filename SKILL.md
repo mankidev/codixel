@@ -8,9 +8,7 @@ license: MIT
 
 ## AI is not a painter
 
-**AI cannot draw pixel art from scratch like a painter. It only writes code, so describe what you want with simple shapes: square, circle, triangle.**
-
-Get the shapes right first, then ask for the details.
+**AI cannot draw pixel art from scratch like a painter. It only writes code.**
 
 ## Steps
 

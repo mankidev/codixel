@@ -6,7 +6,7 @@ Claude Code skill for making pixel art with AI. It covers how to describe what y
 
 ## What to do
 
-- [Describe it with simple shapes](#ai-is-not-a-painter)
+- [Remember AI is not a painter, it only writes code](#ai-is-not-a-painter)
 - [Start from a real reference image](#example-kinryu)
 - [Go step by step](#steps)
 - [Ask for how it should look, like "realistic"](#example-ocean)
@@ -15,7 +15,7 @@ Claude Code skill for making pixel art with AI. It covers how to describe what y
 
 ## AI is not a painter
 
-**AI cannot draw pixel art from scratch like a painter. It only writes code, so describe what you want with simple shapes: square, circle, triangle.**
+**AI cannot draw pixel art from scratch like a painter. It only writes code.**
 
 ![Kinryu, drawn from scratch vs from a reference](images/kinryu_old_new.png)
 

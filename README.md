@@ -8,9 +8,11 @@ Claude Code skill for making pixel art with AI. It covers how to describe what y
 
 - [Remember AI is not a painter, it only writes code](#ai-is-not-a-painter)
 - [Start from a real reference image](#example-kinryu)
+- [Give a reference to compare with](#example-astral-prison)
 - [Go step by step](#steps)
 - [Ask for how it should look, like "realistic"](#example-ocean)
 - [Build characters from only a few pixels](#example-mini-characters)
+- [Find sounds on the internet, don't let the AI make them](#sound)
 - [Never say "do this" or "copy this" and walk away, check every step](#rule-never-do-this-or-copy-this-and-walk-away)
 
 ## AI is not a painter
@@ -31,6 +33,14 @@ Left: the AI drew the dragon from scratch. Right: the AI turned a reference imag
 4. Put it in the scene: the dragon comes down from the sky, roars and breathes fire.
 
 ![Kinryu animation](images/kinryu.gif)
+
+## Example: Astral Prison
+
+![Astral Prison, reference vs result](images/astral_prison.png)
+
+Give the AI a reference to compare with. It understands much better what you want.
+
+![Astral Prison animation](images/astral_prison.gif)
 
 ## Steps
 
@@ -74,6 +84,10 @@ Build characters from only a few pixels so they don't look bad.
 Before and after asking for "more realistic".
 
 ![Ocean animation](images/ocean.gif)
+
+## Sound
+
+Don't let the AI make the sounds for your game. AI-made sounds are easy to spot. Have it find sounds on the internet instead.
 
 ## Rule: never "do this" or "copy this" and walk away
 

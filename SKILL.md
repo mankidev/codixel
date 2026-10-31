@@ -85,7 +85,11 @@ Ask the user what the effect should feel like and if they have an example (a gam
 
 Build characters from only a few pixels. Small characters look good, big detailed ones look bad. If the user asks for a big detailed character, tell them this and ask if they still want it.
 
-## 6. Check before you show
+## 6. Sound
+
+Do not generate or synthesize sounds for the user's game. AI-made sounds are easy to spot. Search the internet for sounds whose license allows use in a game, offer a few candidates, and let the user pick. Note the source and license of each sound you use.
+
+## 7. Check before you show
 
 - Render an image or frames and look at them yourself before showing the user.
 - Never say a step is done without looking at the result.

@@ -14,12 +14,12 @@ Get the shapes right first, then ask for the details.
 
 ## Steps
 
-1. **Reference.** Find real images of what you want.
-2. **Compose.** Have the AI put it together in code from those images.
-3. **Rig.** Ask for bones so the parts can move.
-4. **Pixelate.** Ask for pixel art and say how it should look, for example "realistic".
-5. **Animate.** Look at the frames one by one.
-6. **Put it in the scene.** Check it next to everything else.
+1. Find real images of what you want.
+2. Have the AI put it together in code from those images.
+3. Ask for bones so the parts can move.
+4. Ask for pixel art and say how it should look, for example "realistic".
+5. Look at the animation frames one by one.
+6. Put it in the scene and check it next to everything else.
 
 ## Characters
 

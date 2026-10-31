@@ -25,10 +25,10 @@ Left: the AI drew the dragon from scratch. Right: the AI turned a reference imag
 
 ![Kinryu, step by step](images/kinryu_steps.png)
 
-1. **Reference.** One still of a golden dragon.
-2. **Pixelate.** Remove the background and turn it into pixels.
-3. **Rig.** Find the spine from head to tail and move the body along it.
-4. **Put it in the scene.** The dragon comes down from the sky, roars and breathes fire.
+1. Start from one still of a golden dragon.
+2. Remove the background and turn it into pixels.
+3. Find the spine from head to tail and move the body along it.
+4. Put it in the scene: the dragon comes down from the sky, roars and breathes fire.
 
 ![Kinryu animation](images/kinryu.gif)
 
@@ -36,12 +36,12 @@ Left: the AI drew the dragon from scratch. Right: the AI turned a reference imag
 
 ![God, step by step](images/god_steps.png)
 
-1. **Reference.** Find real images of what you want.
-2. **Compose.** Have the AI put it together in code from those images.
-3. **Rig.** Ask for bones so the parts can move.
-4. **Pixelate.** Ask for pixel art and say how it should look, for example "realistic".
-5. **Animate.** Look at the frames one by one.
-6. **Put it in the scene.** Check it next to everything else.
+1. Find real images of what you want.
+2. Have the AI put it together in code from those images.
+3. Ask for bones so the parts can move.
+4. Ask for pixel art and say how it should look, for example "realistic".
+5. Look at the animation frames one by one.
+6. Put it in the scene and check it next to everything else.
 
 ![God animation](images/god.gif)
 

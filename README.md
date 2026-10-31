@@ -69,6 +69,8 @@ Build characters from only a few pixels so they don't look bad.
 
 Before and after asking for "more realistic".
 
+![Ocean animation](images/ocean.gif)
+
 ## Rule: never "do this" or "copy this" and walk away
 
 **Never tell the AI "do this" or "copy this" and leave it. Check it the whole time it works and make sure what you get is what you wanted.**

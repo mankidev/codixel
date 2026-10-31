@@ -1,5 +1,5 @@
 ---
-name: pixel-art-with-ai
+name: codixel
 description: Short workflow for making pixel art with an AI coding assistant. Use when the user wants sprites, characters, icons or tiles drawn in code as pixel art, and the result has to match what they asked for.
 license: MIT
 ---

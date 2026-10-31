@@ -1,6 +1,6 @@
-<p align="center"><img src="images/logo.png" width="128" alt="pixel-art-with-ai logo"></p>
+<p align="center"><img src="images/logo.png" width="128" alt="Codixel logo"></p>
 
-# pixel-art-with-ai
+# Codixel
 
 Claude Code skill for making pixel art with AI. It covers how to describe what you want, the steps from reference to finished sprite, and why you have to check every step.
 
@@ -90,7 +90,7 @@ If something is wrong, say exactly what is wrong and run the step again. Move on
 ## Install
 
 ```
-git clone https://github.com/mankidev/pixel-art-with-ai ~/.claude/skills/pixel-art-with-ai
+git clone https://github.com/mankidev/codixel ~/.claude/skills/codixel
 ```
 
 Claude Code loads it on the next start. It runs when you ask for sprites, icons or tiles.

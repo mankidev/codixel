@@ -1,38 +1,64 @@
 ---
 name: codixel
-description: Workflow for making pixel art in code together with the user, step by step, from a real reference image to an animated sprite in the scene. Use when the user asks for pixel art sprites, characters, creatures, effects or scenes.
+description: Changes how pixel art is made with AI. Instead of drawing from imagination, ask the user for a reference image, pixelate it, rig it, animate it, and check every step with the user. Use whenever the user asks for pixel art of any kind (sprites, characters, creatures, effects, scenes, tiles).
 license: MIT
 ---
 
 # Codixel
 
-You cannot draw pixel art from scratch like a painter. You write code. Drawings you make up from nothing come out wrong, so work from real images and let the user steer every step.
+You are not a painter. You write code. When you draw something complex from imagination (a dragon, an angel, a character, an animal), the result looks bad. When you start from a real image and turn it into pixels, the result looks good. This skill makes you work the second way and keeps the user in control of every step.
 
-## Start from a reference
+## 1. Before drawing anything, ask
 
-- Ask the user for a real image of what they want, or use the one they gave.
-- If they have none, say that a reference will look much better than drawing from nothing, and ask before drawing from scratch.
+When the user asks for pixel art, decide what it is:
 
-## Steps
+- **Simple object** (crate, rock, house, tree, icon): you can draw it in code directly. Go to step 3.
+- **Complex subject** (dragon, character, creature, wings, face, vehicle, anything organic or detailed): do not start drawing. Ask first.
 
-Do one step, show the result, wait for the user. Move on only when they say it is right.
+Ask in the user's language, with words like these:
 
-1. Remove the background from the reference so only the subject is left.
-2. Turn it into pixels at the size the user wants.
-3. If it moves, find its skeleton (spine, wings, limbs) and give it bones.
-4. Animate it with the bones.
-5. Put it in the scene and show it next to everything else.
+> "If I draw a dragon from scratch it won't look good. It works much better if you send me a picture of the dragon you want and I turn it into pixel art. Do you have a reference image, or should I still draw it from scratch?"
 
-When the user says how it should look, for example "realistic", do that and nothing more.
+Wait for the answer.
 
-## Characters
+- If they send an image, go to step 2.
+- If they still want it from scratch, draw it, but keep it small and simple and show it right away.
 
-Build characters from only a few pixels. Small characters look good, big detailed ones look bad.
+If you do not know the size or where it will be used, ask that too:
 
-## Check every step
+> "What size should it be, and where will it go (game scene, icon, background)?"
 
-- After each step, render an image or a few frames and look at them yourself before you show them.
-- Never say a step is done without having looked at the result.
-- Do only what the user asked. Do not add colors, effects, text, details or features they did not ask for.
-- When the user says something is wrong, change that one thing and show it again.
-- If the direction is unclear, make two or three options side by side and let the user pick.
+## 2. Work from the reference, one step at a time
+
+Do one step, show the result as an image, and ask before going on.
+
+1. Remove the background so only the subject is left. Show it.
+2. Turn it into pixels at the size the user wants. Show it.
+3. If it moves, find its skeleton (spine, wings, legs) and give it bones. Show the bones on top of the sprite.
+4. Animate it with the bones. Show a few frames.
+5. Put it in the scene. Show it next to everything else.
+
+After each step, ask something like:
+
+> "Here is the pixelated version. Does it look right, or should I change something?"
+
+Go to the next step only when the user says it is right.
+
+## 3. Style
+
+When the user says how it should look, for example "realistic", do exactly that. Do not pick colors, palettes, effects or extra details the user did not ask for.
+
+If the direction is unclear, make two or three options side by side and ask:
+
+> "Which one is closer to what you want?"
+
+## 4. Characters
+
+Build characters from only a few pixels. Small characters look good, big detailed ones look bad. If the user asks for a big detailed character, tell them this and ask if they still want it.
+
+## 5. Check before you show
+
+- Render an image or frames and look at them yourself before showing the user.
+- Never say a step is done without looking at the result.
+- Do only what was asked. Do not add text, effects, colors or features on your own.
+- When the user says something is wrong, change that one thing, show it again, and ask again.

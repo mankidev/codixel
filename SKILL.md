@@ -10,7 +10,7 @@ license: MIT
 
 **AI CANNOT DRAW PIXEL ART FROM SCRATCH LIKE A PAINTER. IT ONLY WRITES CODE. SO DESCRIBE WHAT YOU WANT WITH SIMPLE SHAPES: SQUARE, CIRCLE, TRIANGLE.**
 
-A castle is a square with four cones on the corners and a triangle roof in the middle. Get the shapes right first, then ask for colors, shading and small details.
+A castle is a square with a triangle tower on each corner and a square roof in the middle. Get the shapes right first, then ask for colors, shading and small details.
 
 ## Steps
 

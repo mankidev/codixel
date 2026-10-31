@@ -12,7 +12,7 @@ Claude Code skill for making pixel art with AI. It covers how to describe what y
 
 ![Describe it with simple shapes](images/shapes.png)
 
-A castle is a square with four cones on the corners and a triangle roof in the middle. Get the shapes right first, then ask for colors, shading and small details.
+A castle is a square with a triangle tower on each corner and a square roof in the middle. Get the shapes right first, then ask for colors, shading and small details.
 
 ## Steps
 

@@ -10,16 +10,16 @@ license: MIT
 
 **AI CANNOT DRAW PIXEL ART FROM SCRATCH LIKE A PAINTER. IT ONLY WRITES CODE. SO DESCRIBE WHAT YOU WANT WITH SIMPLE SHAPES: SQUARE, CIRCLE, TRIANGLE.**
 
-A castle is a square with a triangle tower on each corner and a square roof in the middle. Get the shapes right first, then ask for colors, shading and small details.
+Get the shapes right first, then ask for the details.
 
 ## Steps
 
-1. **Reference.** Collect a few real images of what you want.
-2. **Compose.** Have the AI place the parts in code at full size.
-3. **Rig.** Give moving parts simple bones so they can be posed.
-4. **Pixelate.** Bring it down to the real size with a few colors per material, flat bands and a narrow dither where two bands meet.
-5. **Animate.** Make the frames and look at them one by one.
-6. **Put it in the scene.** Check it next to everything else, at the real size.
+1. **Reference.** Find real images of what you want.
+2. **Compose.** Have the AI put it together in code from those images.
+3. **Rig.** Ask for bones so the parts can move.
+4. **Pixelate.** Ask for pixel art and say how it should look, for example "realistic".
+5. **Animate.** Look at the frames one by one.
+6. **Put it in the scene.** Check it next to everything else.
 
 ## Rule: never "do this" and walk away
 
@@ -27,8 +27,8 @@ A castle is a square with a triangle tower on each corner and a square roof in t
 
 After every step, look at the result:
 
-- Is it at the right size, on the pixel grid?
-- Are the colors the palette you asked for?
-- Is it the thing you asked for, in the style you asked for?
+- Is it the size you wanted?
+- Does it look the way you described it?
+- Is it the thing you asked for?
 
 If something is wrong, say exactly what is wrong and run the step again. Move on only when the step is right.

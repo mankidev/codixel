@@ -10,8 +10,6 @@ Claude Code skill for making pixel art with AI. It covers how to describe what y
 
 **AI CANNOT DRAW PIXEL ART FROM SCRATCH LIKE A PAINTER. IT ONLY WRITES CODE. SO DESCRIBE WHAT YOU WANT WITH SIMPLE SHAPES: SQUARE, CIRCLE, TRIANGLE.**
 
-![Describe it with simple shapes](images/shapes.png)
-
 A castle is a square with a triangle tower on each corner and a square roof in the middle. Get the shapes right first, then ask for colors, shading and small details.
 
 ## Steps
@@ -29,12 +27,26 @@ A castle is a square with a triangle tower on each corner and a square roof in t
 
 ## Example: Kinryu
 
+![Kinryu, drawn from scratch vs from a reference](images/kinryu_old_new.png)
+
+Left: the AI drew the dragon from scratch. Right: the AI pixelated a reference image and moved it with a rig.
+
 ![Kinryu, step by step](images/kinryu_steps.png)
 
 1. **Reference.** One still of a golden dragon.
 2. **Pixelate.** Remove the background and cut the colors down to a bright gold palette.
 3. **Rig.** Find the spine from head to tail and bind every pixel to it.
 4. **Put it in the scene.** The dragon comes down from the sky, roars and breathes fire.
+
+![Kinryu animation](images/kinryu.gif)
+
+## Example: mini characters
+
+![Mini characters](images/fighters.gif)
+
+Twelve fighters, each a few pixels tall with a colored outline. The same poses on every character, so one set of moves works for all of them.
+
+![Mini characters fighting](images/fighters_battle.gif)
 
 ## Rule: never "do this" and walk away
 

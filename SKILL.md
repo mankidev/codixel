@@ -8,6 +8,19 @@ license: MIT
 
 You are not a painter. You write code. When you draw something complex from imagination (a dragon, an angel, a character, an animal), the result looks bad. When you start from a real image and turn it into pixels, the result looks good. This skill makes you work the second way and keeps the user in control of every step.
 
+## Use the core, do not start from scratch
+
+This skill comes with `core/pixel.js`, next to this file. Use it instead of writing a pixel buffer or effects yourself. In Node: `const P = require("<skill folder>/core/pixel.js")`. In a browser, load it with a script tag and use the global `P`.
+
+- `new P.Buf(w, h)`: pixel buffer. `ox`, `oy` set the world offset. Methods: `pset`, `rect`, `line`, `poly`, `blob` (soft dithered circle), `ring`, `sprite`, `field(fn, palette)` (one value per pixel turned into a palette color with dither), `dither`, `scaled(n)`.
+- `P.png(buf)` returns a PNG buffer in Node. Save frames with it and look at them.
+- Color and noise: `P.palette(cols, n)`, `P.ramp`, `P.mix`, `P.ditherIndex`, `P.noise`, `P.fbm`, `P.rng(seed)`, `P.ease`.
+- `P.novaSmoke(buf, x, te, t, { front, fade, cols })`: big smoke explosion with gathering, light column, shock rings, rising dome and smoke clouds. Call it with `front: false` before drawing the subject and `front: true` after. Ground is at y = 0, up is negative. `te` is the time since the eruption.
+- `new P.Breath({ length, cols })`: fire breath from a mouth. Call `step(on, steps)` every frame and `draw(buf, hx, hy, aA, aB, t, open)` to draw it between the angles `aA` and `aB`.
+- `P.volley(t0, n, { w, h, safe })` and `P.beams(buf, list, t, cols)`: thin blinking warning lines, then bright beams with bloom and a screen flash.
+
+These are taken from finished games. Change colors, sizes and timing to fit the request, but keep the method.
+
 ## 1. Before drawing anything, ask
 
 When the user asks for pixel art, decide what it is:
@@ -56,7 +69,7 @@ Build on the one the user picks. If they like parts of different candidates, com
 
 ## 4. Effects (fire, smoke, beams, explosions)
 
-Effects are not drawn from a reference. You build them in code, frame by frame:
+Effects are not drawn from a reference. You build them in code, frame by frame. Start from the effects in `core/pixel.js` when one fits:
 
 - Give every pixel a value: heat for fire, density for smoke, brightness for light. Get it from noise that moves over time.
 - Turn the value into a color with a ramp from dark to bright, ending in white for the hottest or brightest part.

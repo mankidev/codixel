@@ -53,6 +53,16 @@ Left: the AI drew the dragon from scratch. Right: the AI turned a reference imag
 
 ![Golden dragon](images/kouryu.gif)
 
+### Effects in core/pixel.js
+
+The skill comes with `core/pixel.js`, a small pixel buffer with these effects taken from the games, so the AI does not write them from scratch.
+
+![Beams](images/core_beams.gif)
+
+![Smoke explosion](images/core_smoke.gif)
+
+![Fire breath](images/core_breath.gif)
+
 ## Example: mini characters
 
 ![Mini characters](images/minis.gif)

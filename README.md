@@ -13,7 +13,7 @@ Claude Code skill for making pixel art with AI. It covers how to describe what y
 - [Ask for how it should look, like "realistic"](#example-ocean)
 - [Build characters from only a few pixels](#example-mini-characters)
 - [Find sounds on the internet, don't let the AI make them](#sound)
-- [Never say "do this" or "copy this" and walk away, check every step](#rule-never-do-this-or-copy-this-and-walk-away)
+- [Never say "do this" or "copy this" and walk away, check every step](#never-do-this-or-copy-this-and-walk-away)
 
 ## AI is not a painter
 
@@ -85,7 +85,7 @@ Before and after asking for "more realistic".
 
 Don't let the AI make the sounds for your game. AI-made sounds are easy to spot. Have it find sounds on the internet instead.
 
-## Rule: never "do this" or "copy this" and walk away
+## Never "do this" or "copy this" and walk away
 
 **Never tell the AI "do this" or "copy this" and leave it. Check it the whole time it works and make sure what you get is what you wanted.**
 
@@ -111,4 +111,4 @@ Claude Code loads it on the next start. It runs when you ask for sprites, icons 
 
 ## License
 
-MIT
+GPL-3.0-or-later. See [LICENSE](LICENSE).

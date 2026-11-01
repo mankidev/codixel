@@ -6,22 +6,23 @@ Codixel is a Claude Code skill for making pixel art with AI: game sprites, chara
 
 ## What to do
 
-- [Remember AI is not a painter, it only writes code](#ai-is-not-a-painter)
+- [Remember Claude Code is not a painter, it only writes code](#claude-code-is-not-a-painter)
 - [Start from a real reference image](#example-kinryu)
 - [Give a reference to compare with](#example-astral-prison)
 - [Go step by step](#steps)
 - [Ask for how it should look, like "realistic"](#example-ocean)
 - [Build characters from only a few pixels](#example-mini-characters)
+- [Use dither only where two colors meet](#dither)
 - [Find sounds on the internet, don't let the AI make them](#sound)
 - [Never say "do this" or "copy this" and walk away, check every step](#never-do-this-or-copy-this-and-walk-away)
 
-## AI is not a painter
+## Claude Code is not a painter
 
-**AI cannot draw pixel art from scratch like a painter. It only writes code.**
+**Claude Code cannot draw pixel art from scratch like a painter. It only writes code.**
 
 ![Kinryu, drawn from scratch vs from a reference](images/kinryu_old_new.png)
 
-Left: the AI drew the dragon from scratch. Right: the AI turned a reference image into pixels and moved it.
+Left: Claude Code drew the dragon from scratch. Right: Claude Code turned a reference image into pixels and moved it.
 
 ## Example: Kinryu
 
@@ -64,6 +65,19 @@ Here the bones come before the pixels, because the god is put together from seve
 Made with `core/pixel.js`, which comes with the skill, so the AI does not write effects from scratch. The core also covers the steps from a reference: removing the background, turning it into pixels, bones, bending a long body along its spine, sheets of candidates to pick from, and GIFs.
 
 ![Beams, smoke explosion, fire breath and hell fire](images/core_effects.gif)
+
+## Dither
+
+![The same scene drawn four ways](images/dither.png)
+
+Pixel art has only a few colors. A sky or a round shape still needs to change softly from one color to the next. There are four ways to do it:
+
+- Smooth: every pixel gets its own color. This needs hundreds of colors and looks like a blurry photo, not pixel art.
+- Bands: each color is a flat stripe. The edges between the stripes look like lines that are not really there, and the ball looks like a stack of rings.
+- Dither everywhere: two colors are mixed in a pattern over the whole area. The change is soft, but everything looks grainy.
+- Bands and a dither strip: the colors stay flat, and only a thin strip where two bands meet is mixed. From a little way back, your eye blends the two colors in the strip into one color between them, so the change looks soft and the flat parts stay clean.
+
+Codixel uses the last one. `P.field` and `P.ditherIndex` in the core turn one value per pixel into a palette color this way, and `width` sets how wide the strip is. The pattern is a fixed 4 by 4 grid that stays in the same place in the scene, so it does not flicker in an animation the way random noise does.
 
 ## Example: mini characters
 

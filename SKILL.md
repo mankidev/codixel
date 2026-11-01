@@ -107,6 +107,8 @@ Go to the next step only when the user says it is right.
 
 When the user says how it should look, for example "realistic", do exactly that. Do not pick colors, palettes, effects or extra details the user did not ask for.
 
+For any soft change between colors (a sky, shading on a round shape, smoke, fire), keep each color as a flat band and mix only a thin strip where two bands meet, with `P.field` or `P.ditherIndex`. Do not dither the whole area, and do not use a smooth gradient with many colors.
+
 For simple objects drawn directly in code, also start with two or three candidates side by side and ask:
 
 > "Which one is closer to what you want?"

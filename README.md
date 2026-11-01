@@ -60,14 +60,12 @@ Left: Claude Code drew the dragon from scratch. Right: Claude Code turned a refe
 
 ![The same scene drawn four ways](images/dither.png)
 
-Pixel art has only a few colors. A sky or a round shape still needs to change softly from one color to the next. There are four ways to do it:
+Pixel art has only a few colors, so a sky or a ball needs a trick to change softly from one color to the next:
 
-- Smooth: every pixel gets its own color. This needs hundreds of colors and looks like a blurry photo, not pixel art.
-- Bands: each color is a flat stripe. The edges between the stripes look like lines that are not really there, and the ball looks like a stack of rings.
-- Dither everywhere: two colors are mixed in a pattern over the whole area. The change is soft, but everything looks grainy.
-- Bands and a dither strip: the colors stay flat, and only a thin strip where two bands meet is mixed. From a little way back, your eye blends the two colors in the strip into one color between them, so the change looks soft and the flat parts stay clean.
-
-Codixel uses the last one. `P.field` and `P.ditherIndex` in the core turn one value per pixel into a palette color this way, and `width` sets how wide the strip is. The pattern is a fixed 4 by 4 grid that stays in the same place in the scene, so it does not flicker in an animation the way random noise does.
+- Smooth: hundreds of colors. It looks like a blurry photo.
+- Bands: flat stripes. You see hard lines between them.
+- Dither everywhere: soft, but grainy.
+- Bands and a dither strip: flat colors, mixed only where two bands meet. Codixel uses this one.
 
 ## Sound
 

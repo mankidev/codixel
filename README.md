@@ -125,8 +125,6 @@ Hollowchain is a survivors-style game. The enemies are only 5 by 5 pixels.
 
 ![Blue, violet, crimson and emerald space backgrounds](images/space_backgrounds.png)
 
-There are four colors. Each one has five layers that repeat with no seam.
-
 ![Crimson background with moving layers](images/space_parallax.gif)
 
 ## Install

@@ -113,6 +113,8 @@ GPL-3.0-or-later. See [LICENSE](LICENSE).
 
 ![River animation](images/river.gif)
 
+![Ruby gem animation](images/gem.gif)
+
 ![Blue, violet, crimson and emerald space backgrounds](images/space_backgrounds.png)
 
 ![Crimson background with moving layers](images/space_parallax.gif)

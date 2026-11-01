@@ -97,10 +97,6 @@ git clone https://github.com/mankidev/codixel ~/.claude/skills/codixel
 
 Claude Code loads it on the next start. It runs when you ask for pixel art.
 
-## License
-
-MIT. See [LICENSE](LICENSE).
-
 ## Examples
 
 ![Astral Prison, reference vs result](images/astral_prison.png)
@@ -124,3 +120,7 @@ MIT. See [LICENSE](LICENSE).
 ![Blue, violet, crimson and emerald space backgrounds](images/space_backgrounds.png)
 
 ![Crimson background with moving layers](images/space_parallax.gif)
+
+## License
+
+MIT. See [LICENSE](LICENSE).

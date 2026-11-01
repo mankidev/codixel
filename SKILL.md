@@ -18,6 +18,8 @@ The terminal cannot show pictures. Every time this skill says "show", do this:
 
 Read shows only the first frame of a GIF, so check motion on a numbered frame sheet, not on the GIF.
 
+Keep one preview image per piece of work. Put everything you want to show (frames, the last frame next to the first, the reference) on one sheet with `P.sheet`, not in separate files, and save each new version over the same file. The same goes for the GIF.
+
 ## Use the core, do not start from scratch
 
 This skill comes with `core/pixel.js`, next to this file. Use it instead of writing image code or effects yourself. In Node: `const P = require("<skill folder>/core/pixel.js")`. In a browser, load it with a script tag and use the global `P`; draw a buffer on a canvas with `P.blit(buf, ctx, x, y)`. Loading and saving files only works in Node; in a browser `P.gif` returns a `Uint8Array`.
@@ -119,7 +121,9 @@ If you do not know the size or where it will be used, ask that too:
 
 > "What size should it be, and where will it go (game scene, icon, background)?"
 
-**Only the user brings references.** Do not search the web for photos or videos, and do not download any, unless the user gives you one or asks you to find one. If there is no reference, ask for one. If the user has none, draw it in code.
+**Who brings references.** A subject that will be turned into pixels (a character, a creature, a vehicle) comes from the user: do not search the web for one unless the user asks. If there is no reference, ask for one. If the user has none, draw it in code.
+
+A realistic material, effect or scene built in code (water, waves, sand, rock, fire, smoke, sky, foliage) is different: when the user has no reference, find two to four freely licensed photos yourself (Wikimedia Commons, public domain, CC0) and use them only to look at and to take colors from, never to turn into pixels. Tell the user which photos you used, with links. Download them to a temporary folder (the scratchpad, not the user's project or shared folders) and delete them when the work is done; the user only needs the links.
 
 **Where the reference comes from.** If the user's own photo or drawing, or an image with a license that allows it (public domain, CC0, CC BY), there is nothing to ask. If it looks like someone else's artwork and the result will be published or sold, say so once:
 
@@ -127,7 +131,9 @@ If you do not know the size or where it will be used, ask that too:
 
 Then do what the user decides.
 
-**If the user wants it fast.** When they say to skip the questions, do all the steps in one go and show one sheet with every step on it, then ask what to change.
+**If the user wants it fast.** When they say to skip the questions, do all the steps in one go and show one sheet with every step on it, then ask what to change. Game files still wait for approval (see "Preview first" below).
+
+**Preview first.** The first thing you hand over is only a preview: a GIF and the frame sheet you checked. Do not make the sprite sheet, the per-frame files, a script for the user or any other game file yet. Make them only after the user says they like the preview. This holds for everything in this skill, effects included, and also when the user says to work on your own or to skip the questions.
 
 ## 2. Work from the reference, one step at a time
 
@@ -173,7 +179,7 @@ Effects are not drawn from a reference. You build them in code, frame by frame. 
 - For explosions: gather energy first, then a flash, shock rings, and smoke that rises and slowly thins out.
 - For beams: show thin warning lines first, then the bright beam.
 
-Ask the user what the effect should feel like and if they have an example (a game, a video, a picture), then show one short animation. Change speed, size, color and brightness only when the user asks.
+Ask the user what the effect should feel like and if they have an example (a game, a video, a picture), then show one short animation as a preview GIF. The sprite sheet and other game files come only after the user likes it. Change speed, size, color and brightness only when the user asks.
 
 **When the user says "realistic".** This works for any effect: fire, smoke, steam, water, magic, explosions.
 
@@ -221,9 +227,61 @@ For scenes and props drawn in code (a river, a forest, a waterfall, a cave, a ge
 5. Draw the subject 3 or 4 times bigger and check every frame of one cycle before putting it in the scene. Look for feet shaped like an "L", joints bending the wrong way, and a hip sticking out of the back.
 6. Wheels have thin spokes with gaps between them, a thin iron rim and a small hub, so they don't look like shields.
 
+## Realistic materials
+
+These rules come from a long session where a realistic beach wave took many rounds to get right. They hold for any material or scene asked to look real, not only water. Follow them from the first version, so the user does not have to point out each mistake.
+
+1. **Put the reference on the sheet.** Every preview sheet shows the reference photo next to your frames, so each round is compared with the real thing, not with the last version.
+2. **Take colors from the photo, never guess them.** Crop each part of the reference (water, foam, wet sand, dry sand, sky) and get its colors with `P.quantize(P.crop(ref, x, y, w, h), 5).palette`, then sort them from dark to light before using them as a ramp. Guessed colors come out too saturated and make the result look like a cartoon. This one step made the biggest difference.
+3. **Show it the way a camera would see it.** A cutaway (a slice of the sea seen from the side, a cross-section of the ground) always looks like a game, never like a photo. If the user asks for realism and the chosen view is a cutaway, say so and suggest the camera view.
+4. **Brightness comes from the shape of the surface.** Build a height field (a few wave trains in different directions, bumps, ripples) and light every pixel from its slope: a face turned to the sky or the sun is light, a face turned to the viewer is dark. Water reflects by slope, foam is lit on top and shaded below, sand has low relief. Do not color by depth or distance alone in flat bands; that gives stripes.
+5. **Texture has a real size.** Work out how big each detail is in the world (a ripple, a grain, a crack) and how many pixels that is at its distance. Nothing should be far bigger than real (ripples stretched into long stripes) or smaller than a pixel. When a detail gets smaller than about 2 pixels in the distance, fade it out and replace it with a fine streak texture, or it turns into grain.
+6. **No per-pixel random grain.** Random speckles (salt and pepper) on sand, rock or water look like noise, not material. Use smooth noise and lighting instead.
+7. **Soft things have soft edges.** Foam, spray, mist, shallow water and smoke are see-through at their edges: mix them into what is behind with a few alpha steps instead of drawing solid white pixels with hard edges.
+8. **Dither only at the edges of bands.** On a wide flat area a dither pattern makes rows of dots that look like dotted lines. If an area already has texture, turn dither off there (width 0).
+9. **One thing, one look.** When the same thing is drawn by two pieces of code one after the other (a wave crest that becomes foam, the last frame of a loop that becomes the first), both must use the same noise seed, the same size and the same colors at the moment they hand over. Anything that ends must fade out over several frames, not vanish in one.
+10. **Build it from its real structure.** Find out what the thing is made of and build that, not a texture that looks a bit like it. A cumulus cloud is a cluster of rising puffs with a flat base at the height where vapor condenses and a domed top; foam is a mass of bubbles; rock is blocks split by cracks. Noise thresholds and volume fog are a good fit for smoke and mist, but at small sizes they turn clouds into flat blobs and bands.
+11. **Draw small and distant detail bigger, then shrink it.** Render at 3 times the size and average each 3x3 block down before mapping to the palette. Puffs and grains smaller than a pixel then stay as broken pieces instead of melting into a solid band.
+12. **Measure motion.** Follow "Motion speed" below for every moving part, and fix pops at hand-overs and loop seams before showing.
+
 ## 6. Characters drawn from scratch
 
 When there is no reference, build characters from only a few pixels. Small characters drawn from scratch look good, big detailed ones look bad. If the user asks for a big detailed character without a reference, tell them this and ask for a reference, or ask if they still want it. Big detailed subjects are fine when they come from a reference.
+
+## Real physics
+
+Guessed motion is wrong in both directions: first too fast, then too still after you slow it down. Take motion from the physics of the real thing instead:
+
+1. **Set the units first.** Decide how many meters one pixel is (at each distance, if the scene has depth) and how many seconds one frame is (the GIF delay). Write both down.
+2. **Get the law of motion, not a feeling.** For each moving thing find the formula or measured value that governs it, and look it up (text sources, studies, guides) when you do not know it. Examples:
+   - water waves: deep water `ω = sqrt(g · k)`, so short ripples move slower but change faster than long ones; shallow water `c = sqrt(g · depth)`; a breaker height is about 0.8 of the water depth;
+   - falling things: `y = ½ · g · t²`, with drag limiting the speed (rain about 9 m/s, snow about 1 m/s, sparks and spray slow down fast);
+   - rising things: smoke and steam rise about 1 to 3 m/s and slow down as they cool and spread; a flame flickers about 10 times a second;
+   - plants: branches and grass sway about once every 1 to 3 seconds, leaves faster and smaller;
+   - animals and people: use the gait data from "Animals and vehicles" and real walking or running speeds.
+3. **Real motion is mixed.** Real surfaces are many parts moving in different directions at their own speeds (wave trains from several directions, gusts, eddies). One noise pattern that slides in one direction looks like a moving picture, not like the material.
+4. **Hand-overs keep their speed.** When one phase of a motion turns into the next (a wave that breaks and becomes a rolling foam bore, a bore that runs up the beach, a jump that ends in a landing), the speed at the end of one phase must match the speed at the start of the next. Slowing to a stop with an ease-out and then starting fast again looks wrong. Give every phase its physical curve: ballistic for anything thrown or running up a slope (fast start, slows to a stop at the top), falling for anything coming down (slow start, speeds up), a steady fade for things that run out of energy.
+5. **Sizes follow physics too.** Things grow or shrink at real rates and to real limits. A broken wave's foam drops to about half the wave's height and then shrinks with the water depth; it never swells up and down. Write each size curve as a formula and print its values per frame before rendering.
+6. **Turn it into pixels per frame.** Speed in m/s × seconds per frame ÷ meters per pixel. For a loop, round each motion to a whole number of cycles per loop and recheck that the speed stayed close to the real value.
+7. Then check it with "Motion speed" below.
+
+## Motion speed
+
+You cannot see what happens between frames, so speed mistakes get through (water that boils, foam that jitters, smoke that races). Check speed with numbers, not with your eyes:
+
+1. Before rendering, work out how far every moving thing goes per frame and per second, and compare it with the real thing at the scale of the scene. For noise moved with time, the speed in pixels per frame is the time speed divided by the noise scale on that axis: `P.loopNoise(x * 0.1, y * 0.5, t, T, 0.05)` moves 0.05 / 0.5 = 0.1 pixels per frame. Surface texture (ripples, smoke detail, foam churn) usually moves well under 1 pixel per frame; above 1 it looks like boiling.
+2. After rendering, measure how many pixels change from one frame to the next, for each part of the image (sky, water, ground, the subject):
+
+```js
+const changed = (a, b, y0, y1) => {
+  let n = 0;
+  for (let i = y0 * a.w; i < y1 * a.w; i++) if (a.px[i] !== b.px[i]) n++;
+  return n / ((y1 - y0) * a.w);
+};
+```
+
+A calm area that changes more than about 20% of its pixels every frame is moving too fast. A big jump in one frame only means something pops. Write the numbers down and fix the area that is off.
+3. Put 4 frames in a row on the frame sheet so small steps can be compared, in addition to the spread of the whole loop.
 
 ## 7. Check before you show
 

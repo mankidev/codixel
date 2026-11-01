@@ -115,6 +115,8 @@ Claude Code loads it on the next start. It runs when you ask for pixel art.
 
 ![River animation](images/river.gif)
 
+![Beach wave animation](images/beach_wave.gif)
+
 ![Ruby gem animation](images/gem.gif)
 
 ![Blue, violet, crimson and emerald space backgrounds](images/space_backgrounds.png)

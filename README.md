@@ -99,7 +99,7 @@ Claude Code loads it on the next start. It runs when you ask for pixel art.
 
 ## License
 
-GPL-3.0-or-later. See [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).
 
 ## Examples
 

@@ -14,7 +14,7 @@ Thanks for helping with Codixel.
 - For `core/pixel.js`, include a GIF or a few frames that show the result.
 - New effects should come from a real, finished use (a game, a scene), not from a quick test.
 - Code has no comments; explain the change in the pull request instead.
-- By sending a pull request you agree that your work is released under GPL-3.0-or-later.
+- By sending a pull request you agree that your work is released under the MIT License.
 
 ## Code of conduct
 

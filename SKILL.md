@@ -1,7 +1,7 @@
 ---
 name: codixel
 description: Changes how pixel art is made with AI. Instead of drawing from imagination, ask the user for a reference image, pixelate it, rig it, animate it, and check every step with the user. Use whenever the user asks for pixel art of any kind (sprites, characters, creatures, effects, scenes, props, tiles, gems).
-license: GPL-3.0-or-later
+license: MIT
 ---
 
 # Codixel

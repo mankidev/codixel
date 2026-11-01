@@ -127,8 +127,6 @@ There are four colors. Each one has five layers that repeat with no seam.
 
 ![Crimson background with moving layers](images/space_parallax.gif)
 
-Each layer moves at its own speed.
-
 ## Install
 
 ```

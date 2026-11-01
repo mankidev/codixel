@@ -1320,5 +1320,521 @@ P.png = (buf) => {
   return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk("IHDR", ihdr), chunk("IDAT", zlib.deflateSync(raw)), chunk("IEND", Buffer.alloc(0))]);
 };
 
+P.loopNoise = (x, y, t, T, sp, oct = 3, s = 0) => {
+  const p = (((t % T) + T) % T) / T, a = P.fbm(x, y - t * sp, oct, s) - 0.5, b = P.fbm(x, y - (t - T) * sp, oct, s) - 0.5;
+  return 0.5 + (a * (1 - p) + b * p) / Math.hypot(1 - p, p);
+};
+
+P.blend = (buf, x, y, rgb, a) => {
+  if (a <= 0) return;
+  const c = buf.get(x, y);
+  buf.pset(x, y, c >>> 24 ? P.col(P.mix(P.unpack(c), rgb, a)) : P.col(rgb));
+};
+
+P.WBuf = class extends P.Buf {
+  pset(x, y, c) {
+    super.pset((((Math.round(x) - this.ox) % this.w) + this.w) % this.w + this.ox, y, c);
+  }
+  get(x, y) {
+    return super.get((((Math.round(x) - this.ox) % this.w) + this.w) % this.w + this.ox, y);
+  }
+};
+
+P.tileX = (fn, x, period, m = 24) => {
+  const xm = ((x % period) + period) % period, w = P.clamp((xm - (period - m)) / m);
+  if (w <= 0) return fn(xm);
+  const s = w * w * (3 - 2 * w);
+  return fn(xm) * (1 - s) + fn(xm - period) * s;
+};
+
+P.tile = (fn, period, m = 24) => (x, y) => P.tileX((xx) => fn(xx, y), x, period, m);
+
+P.wrapBlit = (dst, src, shift) => {
+  const s = Math.round(shift), P0 = src.w;
+  for (let y = 0; y < Math.min(dst.h, src.h); y++)
+    for (let x = 0; x < dst.w; x++) {
+      const c = src.px[y * P0 + ((((x + s) % P0) + P0) % P0)];
+      if (c >>> 24) dst.px[y * dst.w + x] = c;
+    }
+};
+
+P.voronoi = (x, y, s = 0) => {
+  const ix = Math.floor(x), iy = Math.floor(y);
+  let f1 = 9, f2 = 9, cx = 0, cy = 0;
+  for (let dy = -1; dy <= 1; dy++)
+    for (let dx = -1; dx <= 1; dx++) {
+      const gx = ix + dx, gy = iy + dy, px = gx + P.hash(gx, gy, s), py = gy + P.hash(gx, gy, s + 1), d = Math.hypot(x - px, y - py);
+      if (d < f1) { f2 = f1; f1 = d; cx = gx; cy = gy; } else if (d < f2) f2 = d;
+    }
+  return { f1, f2, edge: f2 - f1, cx, cy, r: P.hash(cx, cy, s + 2) };
+};
+
+P.rockHeight = (o = {}) => {
+  const sx = o.sx ?? 28, sy = o.sy ?? 14, s = o.seed ?? 1, crack = o.crack ?? 0.1, tilt = o.tilt ?? 1.3, warp = o.warp ?? 10, sub = o.sub ?? 0.45;
+  const facet = (x, y, ax, ay, ss) => {
+    const v = P.voronoi(x / ax, y / ay, ss);
+    const tx = (P.hash(v.cx, v.cy, ss + 3) - 0.5) * tilt, ty = (P.hash(v.cx, v.cy, ss + 4) - 0.62) * tilt;
+    return { h: tx * (x / ax - v.cx) + ty * (y / ay - v.cy) + v.r * 0.35, c: Math.max(0, 1 - v.edge / crack) };
+  };
+  return (x, y) => {
+    const wx = x + (P.fbm(x * 0.03, y * 0.03, 2, s + 11) - 0.5) * warp * 2, wy = y + (P.fbm(x * 0.03, y * 0.03, 2, s + 13) - 0.5) * warp;
+    const a = facet(wx, wy, sx, sy, s), b = facet(wx, wy, sx * 0.42, sy * 0.5, s + 20);
+    const keep = P.clamp((P.fbm(x * 0.05, y * 0.05, 2, s + 15) - 0.5) * 4 + 0.5);
+    let h = a.h + b.h * sub * 0.6 + P.fbm(x * 0.012, y * 0.02, 2, s + 5) * 1.2 + P.fbm(x * 0.09, y * 0.09, 3, s + 7) * 0.35 + P.fbm(x * 0.4, y * 0.4, 2, s + 9) * 0.07;
+    h -= a.c * 0.5 * (0.5 + 0.5 * P.fbm(x * 0.07, y * 0.07, 2, s + 17)) + b.c * 0.3 * keep;
+    return h;
+  };
+};
+
+P.surface = (buf, o) => {
+  const L = o.light || [-0.55, -0.65, 0.52], ll = Math.hypot(...L), lx = L[0] / ll, ly = L[1] / ll, lz = L[2] / ll;
+  const k = o.relief ?? 4, amb = o.ambient ?? 0.28, pal = o.cols.map(P.col), mossPal = o.moss ? o.moss.map(P.col) : null;
+  const x0 = Math.max(o.x0 ?? buf.ox, buf.ox), x1 = Math.min(o.x1 ?? buf.ox + buf.w, buf.ox + buf.w);
+  const y0 = Math.max(o.y0 ?? buf.oy, buf.oy), y1 = Math.min(o.y1 ?? buf.oy + buf.h, buf.oy + buf.h);
+  for (let y = y0; y < y1; y++)
+    for (let x = x0; x < x1; x++) {
+      if (o.mask && !o.mask(x, y)) continue;
+      const h = o.height(x, y), nx = -(o.height(x + 1, y) - o.height(x - 1, y)) * k, ny = -(o.height(x, y + 1) - o.height(x, y - 1)) * k;
+      const nl = Math.hypot(nx, ny, 1), dif = Math.max(0, (nx * lx + ny * ly + lz) / nl);
+      const ao = P.clamp(0.55 + (h - (o.height(x - 3, y) + o.height(x + 3, y) + o.height(x, y - 3) + o.height(x, y + 3)) / 4) * 2.2, 0, 1);
+      let lum = (amb + (1 - amb) * dif) * (0.45 + 0.55 * ao) * (o.shade ? o.shade(x, y) : 1) * (o.gain ?? 1);
+      const up = -ny / nl;
+      if (mossPal && up > (o.mossUp ?? 0.18) && P.fbm(x * 0.12, y * 0.12, 3, 41) > (o.mossCut ?? 0.5)) {
+        buf.pset(x, y, mossPal[P.ditherIndex(P.clamp(lum * 1.15), mossPal.length, x, y, 0.15)]);
+        continue;
+      }
+      buf.pset(x, y, pal[P.ditherIndex(P.clamp(lum), pal.length, x, y, o.dither ?? 0.15)]);
+    }
+};
+
+P.reflect = (buf, o) => {
+  const src = new P.Buf(buf.w, buf.h);
+  src.ox = buf.ox; src.oy = buf.oy; src.px.set(buf.px);
+  for (let y = o.y0; y < o.y1; y++) {
+    const d = y - o.y0;
+    for (let x = buf.ox; x < buf.ox + buf.w; x++) {
+      if (o.mask && !o.mask(x, y)) continue;
+      const wob = o.wob ? o.wob(x, d) : (P.loopNoise(x * 0.05, d * 0.7, o.t, o.T, o.sp ?? -0.4, 2, 61) - 0.5) * (1.5 + d * 0.35);
+      const sy = o.y0 - 1 - Math.round(d * (o.squash ?? 1.4)), c = src.get(x + Math.round(wob), sy);
+      const fade = P.clamp((o.keep ?? 0.5) - d * (o.falloff ?? 0.012));
+      const base = P.ramp(o.cols, P.clamp(d / (o.y1 - o.y0)));
+      buf.pset(x, y, P.col(P.mix(base, c ? P.unpack(c) : base, fade)));
+    }
+  }
+};
+
+P.mist = (buf, o) => {
+  const al = o.alpha || [0.1, 0.2, 0.32, 0.46];
+  for (let y = Math.floor(o.y - o.h); y <= o.y + o.below; y++)
+    for (let x = Math.floor(o.x - o.w - 4); x <= Math.ceil(o.x + o.w + 4); x++) {
+      const up = o.y - y, dx = (x - o.x) / (o.w * (0.65 + 0.35 * P.clamp(up / o.h))), dy = up > 0 ? up / o.h : -up / o.below;
+      const nz = P.loopNoise(x * 0.07, y * 0.09, o.t, o.T, -(o.rise ?? 0.15), 3, 21);
+      const v = (1 - dx * dx - dy * dy) * 0.85 + (nz - 0.5) * 1.5;
+      if (v <= 0.06) continue;
+      P.blend(buf, x, y, o.col, al[P.ditherIndex(P.clamp(v * 1.1), al.length, x, y, 0.3)] * (o.strength ?? 1));
+    }
+};
+
+P.sky = (buf, o) => {
+  const pal = o.cols.map(P.col);
+  for (let y = o.y0 ?? buf.oy; y < o.y1; y++) {
+    const v = 1 - (y - (o.y0 ?? buf.oy)) / (o.y1 - (o.y0 ?? buf.oy));
+    for (let x = buf.ox; x < buf.ox + buf.w; x++) buf.pset(x, y, pal[P.ditherIndex((P.clamp(v) * pal.length) / (pal.length - 1), pal.length, x, y, o.dither ?? 0.15)]);
+  }
+};
+
+P.tree = (buf, o) => {
+  const r = P.rng(o.seed ?? 1), L = o.light || [-0.55, -0.65, 0.52], ll = Math.hypot(...L), lx = L[0] / ll, ly = L[1] / ll, lz = L[2] / ll;
+  const cx = o.x + (r() - 0.5) * o.rx * 0.3, cy = o.base - o.h, amb = o.ambient ?? 0.3;
+  const haze = (c) => (o.haze ? P.mix(c, o.hazeCol, o.haze) : c);
+  const bark = o.bark.map((c) => P.col(haze(c))), leaf = o.cols.map((c) => P.col(haze(c)));
+  const tw = o.trunk ?? 3, ty = cy + o.ry * 0.35;
+  for (let y = Math.floor(ty); y <= o.base; y++) {
+    const k = (o.base - y) / (o.base - ty), xc = o.x + (cx - o.x) * k * k, hw = tw * (1 - 0.45 * k) + (y > o.base - 3 ? (y - (o.base - 3)) * 0.6 : 0);
+    for (let x = Math.floor(xc - hw); x <= Math.ceil(xc + hw); x++) {
+      const u = (x - xc) / Math.max(hw, 0.5);
+      if (Math.abs(u) > 1) continue;
+      const v = 0.62 - u * 0.4 + (P.fbm(x * 0.9, y * 0.12, 2, 5) - 0.5) * 0.5;
+      buf.pset(x, y, bark[P.ditherIndex(P.clamp(v), bark.length, x, y, 0.1)]);
+    }
+  }
+  const n = o.clumps ?? 40, rmin = o.clumpR?.[0] ?? 4, rmax = o.clumpR?.[1] ?? 8, cl = [];
+  for (let i = 0; i < n; i++) {
+    const a = r() * Math.PI * 2, d = Math.sqrt(r()), sz = rmin + (rmax - rmin) * r();
+    const px = cx + Math.cos(a) * o.rx * d, py = cy + Math.sin(a) * o.ry * d - (1 - d) * o.ry * 0.15;
+    cl.push({ x: px, y: py, r: sz * (1 - 0.25 * d), z: (1 - d) * o.rx * 0.6 + r() * 2 });
+    if (o.branches !== false && i % 7 === 0) {
+      const bx = o.x + (cx - o.x) * 0.6, by = ty + (o.base - ty) * 0.1;
+      buf.line(bx, by, px, py, bark[1], 1);
+    }
+  }
+  const zmax = Math.max(...cl.map((c) => c.z + c.r));
+  const X0 = Math.floor(cx - o.rx - rmax), X1 = Math.ceil(cx + o.rx + rmax), Y0 = Math.floor(cy - o.ry - rmax), Y1 = Math.ceil(cy + o.ry + rmax);
+  for (let y = Y0; y <= Y1; y++)
+    for (let x = X0; x <= X1; x++) {
+      let best = null, bz = -1;
+      for (const c of cl) {
+        const dx = x - c.x, dy = y - c.y, d2 = dx * dx + dy * dy;
+        if (d2 >= c.r * c.r) continue;
+        const z = c.z + Math.sqrt(c.r * c.r - d2);
+        if (z > bz) { bz = z; best = c; }
+      }
+      if (!best) continue;
+      const nx = (x - best.x) / best.r, ny = (y - best.y) / best.r, q = Math.hypot(nx, ny), nz = Math.sqrt(Math.max(0, 1 - q * q));
+      const lf = P.fbm(x * (o.leaf ?? 0.5), y * (o.leaf ?? 0.5), 2, (o.seed ?? 1) + 5);
+      const crown = Math.hypot((x - cx) / (o.rx + rmax), (y - cy) / (o.ry + rmax));
+      if (q > 0.68 && crown > 0.72 && lf < 0.3 + (q - 0.68) * 1.6) continue;
+      let dif = Math.max(0, nx * lx + ny * ly + nz * lz) + (lf - 0.5) * 0.7;
+      const low = P.clamp((y - (cy - o.ry * 0.3)) / (o.ry * 1.3));
+      const lum = (amb + (1 - amb) * P.clamp(dif)) * (1 - 0.4 * low) * (0.6 + 0.4 * bz / zmax) * (q > 0.82 ? 0.8 : 1) * (o.gain ?? 1.05);
+      buf.pset(x, y, leaf[P.ditherIndex(P.clamp(lum), leaf.length, x, y, 0.15)]);
+    }
+};
+
+P.grass = (buf, o) => {
+  const r = P.rng(o.seed ?? 3), pal = o.cols.map(P.col), Pd = o.period;
+  for (let i = 0; i < o.count; i++) {
+    const x0 = o.x0 + r() * (o.x1 - o.x0), keep = r(), hr = r(), lr = r(), ph = r() * 6, tr = r();
+    if (o.density && keep > o.density(x0)) continue;
+    const base = o.ground(x0), h = (o.hmin + hr * (o.hmax - o.hmin)) * (o.tall ? o.tall(x0) : 1), lean0 = (lr - 0.5) * h * 0.5;
+    const sway = o.t === undefined ? 0 : Math.sin((o.t / o.T) * Math.PI * 2 * (o.freq ?? 1) + ph + x0 * 0.08) * (o.sway ?? 1);
+    const tone = tr * 0.35;
+    let xs = [x0];
+    if (Pd) {
+      const m = ((((x0 - (o.shift ?? 0)) % Pd) + Pd) % Pd);
+      xs = [m, m - Pd].filter((v) => v > -15 && v < buf.w + 15);
+    }
+    for (const bx of xs)
+      for (let k = 0; k <= h; k++) {
+        const u = k / h, x = bx + (lean0 + sway) * u * u, y = base - k;
+        buf.pset(x, y, pal[P.ditherIndex(P.clamp(0.15 + u * 0.75 + tone - 0.15), pal.length, Math.round(x), y, 0.2)]);
+      }
+  }
+};
+
+P.foliage = (buf, cl, o) => {
+  cl = cl.slice();
+  const L = o.light || [-0.55, -0.65, 0.52], ll = Math.hypot(...L), lx = L[0] / ll, ly = L[1] / ll, lz = L[2] / ll;
+  const sl = Math.hypot(lx, ly), sx = lx / sl, sy = ly / sl, sd = o.shadowDist ?? 5;
+  const pal = o.cols.map((c) => P.col(o.haze ? P.mix(c, o.hazeCol, o.haze) : c));
+  const cell = o.cell ?? 2.2, amb = o.ambient ?? 0.22, seed = o.seed ?? 1, edge = o.edge ?? 0.7;
+  let X0 = 1e9, X1 = -1e9, Y0 = 1e9, Y1 = -1e9, zmax = 0;
+  if (o.wind) {
+    let top = Infinity, bot = -Infinity;
+    for (const c of cl) { top = Math.min(top, c.y); bot = Math.max(bot, c.y); }
+    cl = cl.map((c, i) => {
+      const hw = P.clamp((bot - c.y) / Math.max(1, bot - top)) * 0.7 + 0.3, ph = P.hash(i, seed, 77) * 0.35;
+      return { ...c, x: c.x + Math.sin(Math.PI * 2 * (o.wind.phase - ph)) * o.wind.amp * hw, y: c.y + Math.cos(Math.PI * 2 * (o.wind.phase - ph)) * o.wind.amp * 0.3 * hw };
+    });
+  }
+  for (const c of cl) {
+    X0 = Math.min(X0, c.x - c.r); X1 = Math.max(X1, c.x + c.r); Y0 = Math.min(Y0, c.y - c.r); Y1 = Math.max(Y1, c.y + c.r);
+    zmax = Math.max(zmax, c.z + c.r);
+  }
+  const top = (x, y) => {
+    let best = null, bz = -1;
+    for (const c of cl) {
+      const dx = x - c.x, dy = y - c.y, d2 = dx * dx + dy * dy;
+      if (d2 >= c.r * c.r) continue;
+      const z = c.z + Math.sqrt(c.r * c.r - d2);
+      if (z > bz) { bz = z; best = c; }
+    }
+    return [best, bz];
+  };
+  for (let y = Math.floor(Y0); y <= Math.ceil(Y1); y++)
+    for (let x = Math.floor(X0); x <= Math.ceil(X1); x++) {
+      const [c, bz] = top(x, y);
+      if (!c) continue;
+      const nx = (x - c.x) / c.r, ny = (y - c.y) / c.r, q = Math.hypot(nx, ny), nz = Math.sqrt(Math.max(0, 1 - q * q));
+      const v = P.voronoi(x / cell, y / cell, seed), hc = P.hash(v.cx, v.cy, seed + 9);
+      if (q > edge && hc < (q - edge) * 3.2) continue;
+      if (o.gaps && hc < o.gaps && bz < zmax * 0.6) continue;
+      const wf = o.wind ? Math.sin(Math.PI * 2 * (o.wind.phase + P.hash(v.cx, v.cy, seed + 5))) * (o.wind.flutter ?? 0.35) : 0;
+      const tx = (P.hash(v.cx, v.cy, seed + 3) - 0.5) * 0.9 + wf, ty = (P.hash(v.cx, v.cy, seed + 4) - 0.5) * 0.9 - wf * 0.5;
+      const mx = nx + tx, my = ny + ty, mz = nz + 0.3, ml = Math.hypot(mx, my, mz);
+      let dif = Math.max(0, (mx * lx + my * ly + mz * lz) / ml);
+      const [sc, sz] = top(x + sx * sd, y + sy * sd);
+      if (sc && sz > bz + 1) dif *= 0.35;
+      let lum = (amb + (1 - amb) * dif) * (0.55 + 0.45 * bz / zmax);
+      if (v.edge < 0.1) lum *= 0.7;
+      lum *= o.gain ?? 1;
+      buf.pset(x, y, pal[P.ditherIndex(P.clamp(lum), pal.length, x, y, 0.1)]);
+    }
+};
+
+P.limb = (buf, x0, y0, x1, y1, w0, w1, pal) => {
+  const len = Math.hypot(x1 - x0, y1 - y0) || 1, nx = -(y1 - y0) / len, ny = (x1 - x0) / len, n = Math.ceil(len * 2);
+  for (let i = 0; i <= n; i++) {
+    const u = i / n, x = x0 + (x1 - x0) * u, y = y0 + (y1 - y0) * u, w = w0 + (w1 - w0) * u;
+    for (let k = -w; k <= w; k += 0.5) {
+      const s = (k / Math.max(w, 0.5)) * Math.sign(nx || 1), px = Math.round(x + nx * k), py = Math.round(y + ny * k);
+      const v = 0.6 - s * 0.35 + (P.fbm(px * 0.9, py * 0.15, 2, 5) - 0.5) * 0.4;
+      buf.pset(px, py, pal[P.ditherIndex(P.clamp(v), pal.length, px, py, 0.1)]);
+    }
+  }
+};
+
+P.branchTree = (buf, o) => {
+  const r = P.rng(o.seed ?? 1), cl = [], bark = o.bark.map((c) => P.col(o.haze ? P.mix(c, o.hazeCol, o.haze) : c));
+  const cr = o.clumpR || [4, 7], up = o.up ?? 0.25, tips = [];
+  const grow = (x, y, a, len, w, d) => {
+    const x1 = x + Math.cos(a) * len, y1 = y + Math.sin(a) * len;
+    P.limb(buf, x, y, x1, y1, w, w * 0.7, bark);
+    if (d <= (o.midLeaves ?? 1)) cl.push({ x: (x + x1) / 2 + (r() - 0.5) * 3, y: (y + y1) / 2 + (r() - 0.5) * 3, r: cr[0] + (cr[1] - cr[0]) * r() * 0.7, z: r() * 6 });
+    if (d === 0) {
+      tips.push([x1, y1]);
+      for (let i = 0; i < (o.tipClumps ?? 3); i++) cl.push({ x: x1 + (r() - 0.5) * cr[1] * 1.3, y: y1 + (r() - 0.5) * cr[1] * 0.9, r: cr[0] + (cr[1] - cr[0]) * r(), z: 4 + r() * 8 });
+      return;
+    }
+    const n = 2 + (r() < (o.three ?? 0.4) ? 1 : 0);
+    for (let i = 0; i < n; i++) {
+      let na = a + (n === 1 ? 0 : (i / (n - 1) - 0.5) * 2 * o.spread) + (r() - 0.5) * (o.jitter ?? 0.4);
+      na = na + (-Math.PI / 2 - na) * up;
+      grow(x1, y1, na, len * (o.decay ?? 0.72) * (0.8 + r() * 0.4), w * 0.66, d - 1);
+    }
+  };
+  grow(o.x, o.base, -Math.PI / 2 + (r() - 0.5) * 0.15 + (o.lean ?? 0), o.trunk, o.width, o.depth);
+  if (o.hang)
+    for (const [tx, ty] of tips) {
+      const L = o.hang * (0.55 + 0.45 * r()), drift = (r() - 0.5) * 0.12, z0 = 3 + r() * 8;
+      for (let k = 0; k * 1.8 < L && ty + k * 1.8 < (o.hangTo ?? Infinity); k++) cl.push({ x: tx + drift * k + Math.sin(k * 0.4 + tx) * 0.6, y: ty + k * 1.8, r: 2.4 - (k * 1.8 / L) * 0.8, z: z0 - k * 0.05 });
+    }
+  P.foliage(buf, cl, { ...o, cols: o.cols });
+};
+
+P.conifer = (buf, o) => {
+  const r = P.rng(o.seed ?? 1), bark = o.bark.map((c) => P.col(o.haze ? P.mix(c, o.hazeCol, o.haze) : c)), cl = [];
+  const topY = o.base - o.h;
+  P.limb(buf, o.x, o.base, o.x, topY + 2, o.width ?? 1.6, 0.5, bark);
+  for (let y = topY + 2; y < o.base - (o.bare ?? 6); y += 2.2 + r() * 0.8) {
+    const k = (y - topY) / (o.base - topY), w = o.rx * k * (0.8 + r() * 0.4);
+    for (const side of [-1, 1])
+      for (let s = 0; s <= w; s += 1.8) cl.push({ x: o.x + side * s, y: y + s * 0.4 + (r() - 0.5), r: 2.6 - (s / Math.max(w, 1)) * 0.9, z: (w - s) * 0.35 + r() * 2 });
+    cl.push({ x: o.x + (r() - 0.5) * 2, y: y + 1, r: 2.4, z: w * 0.4 + 2 });
+  }
+  cl.push({ x: o.x, y: topY + 1, r: 1.6, z: 3 });
+  P.foliage(buf, cl, { cell: 1.7, edge: 0.6, ...o });
+};
+
+P.clouds = (buf, o) => {
+  const L = o.sun || [-0.65, -0.75], ll = Math.hypot(...L), sx = L[0] / ll, sy = L[1] / ll, pal = o.cols;
+  const val = (x, y) => {
+    const h = (o.base - y) / o.h;
+    if (h < -0.6 || h > 1.4) return -1;
+    let v = P.loopNoise(y * 0.06 + P.fbm(x * 0.02, y * 0.05, 2, 91) * 1.5, x * 0.022, o.t, o.T, (o.drift ?? 0.15) * 0.022, 4, o.seed ?? 81) - 0.52 + 0.2 * (1 - Math.abs(h - 0.4) * 1.4);
+    if (h < 0) v += h * 0.5;
+    return v * (o.amount ?? 1);
+  };
+  for (let y = Math.floor(o.base - o.h * 1.4); y <= o.base + 3; y++)
+    for (let x = buf.ox; x < buf.ox + buf.w; x++) {
+      const v = val(x, y);
+      if (v <= 0) continue;
+      const lit = v - val(x + sx * 3, y + sy * 3), h = (o.base - y) / o.h;
+      let lum = 0.55 + lit * 3 - P.clamp((0.25 - h) * 2) * 0.25;
+      const k = P.ditherIndex(P.clamp(lum), pal.length, x, y, 0.15), a = v < 0.03 ? 0.3 : v < 0.07 ? 0.65 : 1;
+      P.blend(buf, x, y, P.mix(pal[k], o.hazeCol || pal[k], o.haze ?? 0), a);
+    }
+};
+P.blitScaled = (dst, dw, dh, src, shift, S, y0 = 0, y1 = src.h) => {
+  const s = Math.round(shift * S), Pw = src.w, xi = new Int32Array(dw);
+  for (let X = 0; X < dw; X++) xi[X] = ((Math.floor((X + s) / S) % Pw) + Pw) % Pw;
+  for (let Y = Math.max(0, y0 * S); Y < Math.min(dh, y1 * S); Y++) {
+    const sb = ((Y / S) | 0) * Pw, db = Y * dw;
+    for (let X = 0; X < dw; X++) {
+      const c = src.px[sb + xi[X]];
+      if (c >>> 24) dst[db + X] = c;
+    }
+  }
+};
+
+P.leafFlicker = (base, moved, frames, o = {}) => {
+  const Pw = base.w, H = base.h, leaves = [], density = o.density ?? 0.07, y1 = o.maxY ?? H;
+  for (let y = 1; y < y1; y++)
+    for (let x = 0; x < Pw; x++) {
+      const i = y * Pw + x;
+      if (!(base.px[i] >>> 24) || base.px[i] === moved.px[i]) continue;
+      for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1]]) {
+        const j = (y + dy) * Pw + ((x + dx + Pw) % Pw);
+        if (base.px[j] >>> 24) continue;
+        if (P.hash(x * 3 + dx + 7, y * 3 + dy + 7, 401) < density) leaves.push({ j, c: base.px[i], ph: P.hash(x, y, 409), len: 0.3 + P.hash(x, y, 419) * 0.25 });
+      }
+    }
+  const out = [];
+  for (let k = 0; k < frames; k++) {
+    const b = new P.WBuf(Pw, H);
+    b.px.set(base.px);
+    for (const l of leaves) if ((k / frames + l.ph) % 1 < l.len) b.px[l.j] = l.c;
+    out.push(b);
+  }
+  return out;
+};
+
+P.cap = (ax, ay, bx, by, ra, rb = ra) => ({ ax, ay, bx, by, ra, rb });
+P.ell = (x, y, rx, ry, rot = 0) => ({ e: 1, x, y, rx, ry, rot });
+P.shapeHeight = (p, x, y) => {
+  if (p.e) {
+    const c = Math.cos(p.rot || 0), s = Math.sin(p.rot || 0), dx = x - p.x, dy = y - p.y, u = (dx * c + dy * s) / p.rx, v = (-dx * s + dy * c) / p.ry, q = u * u + v * v;
+    return q < 1 ? Math.sqrt(1 - q) * Math.min(p.rx, p.ry) : 0;
+  }
+  const dx = p.bx - p.ax, dy = p.by - p.ay, l2 = dx * dx + dy * dy || 1, u = P.clamp(((x - p.ax) * dx + (y - p.ay) * dy) / l2);
+  const r = p.ra + (p.rb - p.ra) * u, d = Math.hypot(x - p.ax - dx * u, y - p.ay - dy * u);
+  return d < r ? Math.sqrt(r * r - d * d) : 0;
+};
+P.solid = (buf, prims, cols, o = {}) => {
+  const L = o.light || [-0.55, -0.65, 0.52], ll = Math.hypot(...L), lx = L[0] / ll, ly = L[1] / ll, lz = L[2] / ll;
+  const pal = cols.map(P.col), k = o.k ?? 0.8, amb = o.ambient ?? 0.24, dark = o.dark ?? 1, gloss = o.gloss ?? 0, hl = Math.hypot(lx, ly, lz + 1), hx = lx / hl, hy = ly / hl, hz = (lz + 1) / hl;
+  let X0 = 1e9, X1 = -1e9, Y0 = 1e9, Y1 = -1e9;
+  for (const q of prims) {
+    const r = q.e ? Math.max(q.rx, q.ry) : Math.max(q.ra, q.rb);
+    X0 = Math.min(X0, (q.e ? q.x : Math.min(q.ax, q.bx)) - r); X1 = Math.max(X1, (q.e ? q.x : Math.max(q.ax, q.bx)) + r);
+    Y0 = Math.min(Y0, (q.e ? q.y : Math.min(q.ay, q.by)) - r); Y1 = Math.max(Y1, (q.e ? q.y : Math.max(q.ay, q.by)) + r);
+  }
+  const Hf = (x, y) => {
+    let s = 0, any = false;
+    for (const q of prims) { const h = P.shapeHeight(q, x, y); if (h > 0) { s += Math.exp(h / k); any = true; } }
+    return any ? k * Math.log(s) : 0;
+  };
+  const gx0 = Math.floor(X0) - 1, gy0 = Math.floor(Y0) - 1, gw = Math.ceil(X1) - gx0 + 2, gh = Math.ceil(Y1) - gy0 + 2;
+  let grid = null;
+  if (o.inflate) {
+    const hp = new Float32Array(gw * gh), d = new Float32Array(gw * gh), cut = o.cut ?? 0.12, R = o.inflate, mix = o.inflateMix ?? 0.75;
+    for (let j = 0; j < gh; j++) for (let i = 0; i < gw; i++) { const h = Hf(gx0 + i, gy0 + j); hp[j * gw + i] = h; d[j * gw + i] = h > cut ? 1e6 : 0; }
+    for (let j = 0; j < gh; j++) for (let i = 0; i < gw; i++) {
+      const k2 = j * gw + i;
+      if (!d[k2]) continue;
+      if (i > 0) d[k2] = Math.min(d[k2], d[k2 - 1] + 1);
+      if (j > 0) d[k2] = Math.min(d[k2], d[k2 - gw] + 1, i > 0 ? d[k2 - gw - 1] + 1.414 : 1e6, i < gw - 1 ? d[k2 - gw + 1] + 1.414 : 1e6);
+    }
+    for (let j = gh - 1; j >= 0; j--) for (let i = gw - 1; i >= 0; i--) {
+      const k2 = j * gw + i;
+      if (!d[k2]) continue;
+      if (i < gw - 1) d[k2] = Math.min(d[k2], d[k2 + 1] + 1);
+      if (j < gh - 1) d[k2] = Math.min(d[k2], d[k2 + gw] + 1, i < gw - 1 ? d[k2 + gw + 1] + 1.414 : 1e6, i > 0 ? d[k2 + gw - 1] + 1.414 : 1e6);
+    }
+    grid = new Float32Array(gw * gh);
+    for (let k2 = 0; k2 < grid.length; k2++) { const t = Math.min(d[k2], R); grid[k2] = d[k2] ? Math.sqrt(Math.max(0, R * R - (R - t) * (R - t))) * mix + hp[k2] * (1 - mix) : 0; }
+  }
+  const G = (x, y) => grid[(y - gy0) * gw + (x - gx0)];
+  for (let y = Math.floor(Y0); y <= Math.ceil(Y1); y++)
+    for (let x = Math.floor(X0); x <= Math.ceil(X1); x++) {
+      const h = grid ? G(x, y) : Hf(x, y);
+      if (h <= (grid ? 0 : o.cut ?? 0.12)) continue;
+      const nx = grid ? -(G(x + 1, y) - G(x - 1, y)) / 2 : -(Hf(x + 0.5, y) - Hf(x - 0.5, y)), ny = grid ? -(G(x, y + 1) - G(x, y - 1)) / 2 : -(Hf(x, y + 0.5) - Hf(x, y - 0.5)), nl = Math.hypot(nx, ny, 1);
+      let v = (amb + (1 - amb) * Math.max(0, (nx * lx + ny * ly + lz) / nl) + (gloss ? Math.pow(Math.max(0, (nx * hx + ny * hy + hz) / nl), o.shine ?? 10) * gloss : 0)) * dark;
+      if (o.shade) v *= o.shade(x, y);
+      buf.pset(x, y, pal[P.ditherIndex(P.clamp(v), pal.length, x, y, 0)]);
+    }
+};
+P.ik = (hx, hy, fx, fy, l1, l2, dir) => {
+  let d = Math.hypot(fx - hx, fy - hy);
+  const base = Math.atan2(fy - hy, fx - hx);
+  d = Math.min(d, l1 + l2 - 0.01);
+  const a = Math.acos(P.clamp((l1 * l1 + d * d - l2 * l2) / (2 * l1 * d), -1, 1)), ang = base - dir * a;
+  return [hx + Math.cos(ang) * l1, hy + Math.sin(ang) * l1];
+};
+
+class Gem {
+  constructor(o = {}) {
+    this.o = { size: 60, ior: 1.76, sigma: [0.32, 5.5, 4.2], tilt: 28, lean: -35, table: 0.57, crown: 0.32, pavilion: 0.86, exposure: 1.25, ss: 4, ...o };
+    this.o.cols = o.cols || [[10, 1, 8], [28, 3, 14], [52, 5, 20], [82, 8, 26], [116, 12, 30], [152, 18, 36], [188, 28, 40], [218, 52, 54], [238, 92, 82], [250, 148, 132], [255, 206, 196], [255, 250, 248]];
+    this.o.strips = o.strips || [[-2.5, -1.2, 0.35, 1.2, 14], [0.4, 0.75, 0.15, 0.9, 10], [2.2, 2.45, 0.2, 1.1, 8], [-0.6, -0.35, 0.9, 1.4, 12], [1.2, 1.9, 0.55, 0.8, 9], [-3.0, 3.0, 1.42, 1.6, 1.5], [0.9, 1.3, 0.1, 0.5, 9], [1.9, 2.2, 0.6, 1.0, 8], [0.2, 0.5, 0.95, 1.25, 7], [2.6, 3.1, -0.1, 0.25, 5], [-1.0, -0.6, -0.2, 0.1, 4]];
+    const pol = (r, a, y) => [r * Math.cos(a), y, r * Math.sin(a)], D = (k) => (Math.PI / 4) * k, { table: rt, crown: hc, pavilion: hp } = this.o, sr = 0.78, lr = 0.45;
+    const T = (k) => pol(rt, D(k), hc), S = (k) => pol(sr, D(k) + Math.PI / 8, hc * (1 - (sr - rt) / (1 - rt)));
+    const G = (j) => pol(1, (Math.PI / 8) * j, 0), L = (k) => pol(lr, D(k) + Math.PI / 8, -hp * (1 - lr)), C = [0, -hp, 0];
+    this.tris = [];
+    for (let k = 0; k < 8; k++) {
+      const k1 = (k + 1) % 8, km = (k + 7) % 8;
+      this.tris.push([T(0), T(k), T(k1)], [T(k), S(km), G(2 * k)], [T(k), G(2 * k), S(k)], [T(k), S(k), T(k1)], [S(k), G(2 * k), G(2 * k + 1)], [S(k), G(2 * k + 1), G((2 * k + 2) % 16)]);
+      this.tris.push([G(2 * k), L(km), C], [G(2 * k), C, L(k)], [G(2 * k), G(2 * k + 1), L(k)], [G(2 * k + 1), G((2 * k + 2) % 16), L(k)]);
+    }
+    this.pal = this.o.cols.map(P.col);
+  }
+
+  env(d) {
+    const sm = (e0, e1, x) => { const t = P.clamp((x - e0) / (e1 - e0)); return t * t * (3 - 2 * t); };
+    const az = Math.atan2(d[2], d[0]), el = Math.asin(P.clamp(d[1], -1, 1));
+    let v = 0.002 + (el < -0.25 ? 0.02 : 0);
+    for (const [a0, a1, e0, e1, s] of this.o.strips) {
+      const m = (a0 + a1) / 2, h = (a1 - a0) * 0.32, me = (e0 + e1) / 2, he = (e1 - e0) * 0.4;
+      const ea = Math.min(sm(m - h - 0.04, m - h + 0.04, az), 1 - sm(m + h - 0.04, m + h + 0.04, az)), ee = Math.min(sm(me - he - 0.04, me - he + 0.04, el), 1 - sm(me + he - 0.04, me + he + 0.04, el));
+      v += Math.max(0, Math.min(ea, ee)) * s;
+    }
+    return v;
+  }
+
+  render(phi) {
+    const o = this.o, dt = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2], sb = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]], ad = (a, b, s = 1) => [a[0] + b[0] * s, a[1] + b[1] * s, a[2] + b[2] * s];
+    const nr = (a) => { const l = Math.hypot(...a); return a.map((v) => v / l); }, cr = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+    const rf = (d, n) => ad(d, n, -2 * dt(d, n)), rr = (d, n, eta) => { const c = -dt(d, n), k = 1 - eta * eta * (1 - c * c); return k < 0 ? null : ad(d.map((v) => v * eta), n, eta * c - Math.sqrt(k)); };
+    const ti = (o.tilt * Math.PI) / 180, le = (o.lean * Math.PI) / 180, cy = Math.cos(phi), sy = Math.sin(phi), cx = Math.cos(ti), sx = Math.sin(ti), cz = Math.cos(le), sz = Math.sin(le);
+    const M = (v) => { const x = v[0] * cy + v[2] * sy, z = -v[0] * sy + v[2] * cy, y2 = v[1] * cx - z * sx, z2 = v[1] * sx + z * cx; return [x * cz - y2 * sz, x * sz + y2 * cz, z2]; };
+    const pl = [];
+    for (const t of this.tris) {
+      const a = M(t[0]), b = M(t[1]), c = M(t[2]);
+      let n = nr(cr(sb(b, a), sb(c, a)));
+      if (dt(n, [(a[0] + b[0] + c[0]) / 3, (a[1] + b[1] + c[1]) / 3, (a[2] + b[2] + c[2]) / 3]) < 0) n = n.map((v) => -v);
+      if (!pl.some((q) => dt(q.n, n) > 0.9999 && Math.abs(dt(q.n, sb(a, q.p))) < 1e-6)) pl.push({ n, p: a });
+    }
+    const R0 = ((o.ior - 1) / (o.ior + 1)) ** 2;
+    const trace = (or, d) => {
+      let tin = -1e9, tout = 1e9, nin = null;
+      for (const q of pl) {
+        const dn = dt(q.n, d), t = dt(q.n, sb(q.p, or)) / dn;
+        if (dn < 0) { if (t > tin) { tin = t; nin = q.n; } } else if (dn > 0 && t < tout) tout = t;
+      }
+      if (tin > tout || !nin) return null;
+      const Fr = R0 + (1 - R0) * (1 + dt(d, nin)) ** 5, col = [0, 0, 0], e = this.env(rf(d, nin));
+      for (let c = 0; c < 3; c++) col[c] += Fr * e;
+      let p = ad(or, d, tin), dir = rr(d, nin, 1 / o.ior);
+      const thr = [1 - Fr, 1 - Fr, 1 - Fr];
+      for (let b = 0; b < 7 && dir; b++) {
+        let te = 1e9, ne = null;
+        for (const q of pl) { const dn = dt(q.n, dir); if (dn > 1e-6) { const t = dt(q.n, sb(q.p, p)) / dn; if (t > 1e-6 && t < te) { te = t; ne = q.n; } } }
+        if (!ne) break;
+        for (let c = 0; c < 3; c++) thr[c] *= Math.exp(-o.sigma[c] * te);
+        p = ad(p, dir, te);
+        const inN = ne.map((v) => -v), od = rr(dir, inN, o.ior);
+        if (od) {
+          const Re = R0 + (1 - R0) * (1 - Math.abs(dt(od, ne))) ** 5, eo = this.env(od);
+          for (let c = 0; c < 3; c++) { col[c] += thr[c] * (1 - Re) * eo; thr[c] *= Re; }
+        }
+        dir = rf(dir, inN);
+      }
+      return col;
+    };
+    const SZ = o.size, b = new P.Buf(SZ, SZ), scale = SZ / 2.45, ss = o.ss;
+    for (let py = 0; py < SZ; py++)
+      for (let px = 0; px < SZ; px++) {
+        const acc = [0, 0, 0];
+        let hits = 0;
+        for (let j = 0; j < ss; j++)
+          for (let i = 0; i < ss; i++) {
+            const c = trace([(px + (i + 0.5) / ss - SZ / 2) / scale, -(py + (j + 0.5) / ss - SZ / 2) / scale, 10], [0, 0, -1]);
+            if (c) { hits++; for (let k = 0; k < 3; k++) acc[k] += c[k]; }
+          }
+        if (hits < (ss * ss) / 2) continue;
+        const rgb = acc.map((v) => Math.pow(1 - Math.exp(-(v / hits) * o.exposure), 1 / 2.2) * 255);
+        let best = 0, bd = Infinity;
+        for (let k = 0; k < o.cols.length; k++) {
+          const q = o.cols[k], dd = 2 * (rgb[0] - q[0]) ** 2 + 4 * (rgb[1] - q[1]) ** 2 + 3 * (rgb[2] - q[2]) ** 2;
+          if (dd < bd) { bd = dd; best = k; }
+        }
+        b.pset(px, py, this.pal[best]);
+      }
+    return b;
+  }
+
+  frames(n) {
+    const fr = [];
+    for (let f = 0; f < n; f++) fr.push(this.render((f / n) * Math.PI * 2));
+    const SZ = this.o.size;
+    let X0 = SZ, X1 = 0, Y0 = SZ, Y1 = 0;
+    for (const f of fr) for (let y = 0; y < SZ; y++) for (let x = 0; x < SZ; x++) if (f.px[y * SZ + x] >>> 24) { X0 = Math.min(X0, x); X1 = Math.max(X1, x); Y0 = Math.min(Y0, y); Y1 = Math.max(Y1, y); }
+    const dx = Math.round((SZ - 1 - X1 - X0) / 2), dy = Math.round((SZ - 1 - Y1 - Y0) / 2);
+    return fr.map((f) => { const o = new P.Buf(SZ, SZ); o.sprite(f, dx, dy); return o; });
+  }
+}
+P.Gem = Gem;
+
 if (typeof module !== "undefined") module.exports = P;
 else globalThis.P = P;

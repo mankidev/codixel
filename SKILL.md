@@ -1,6 +1,6 @@
 ---
 name: codixel
-description: Changes how pixel art is made with AI. Instead of drawing from imagination, ask the user for a reference image, pixelate it, rig it, animate it, and check every step with the user. Use whenever the user asks for pixel art of any kind (sprites, characters, creatures, effects, scenes, tiles).
+description: Changes how pixel art is made with AI. Instead of drawing from imagination, ask the user for a reference image, pixelate it, rig it, animate it, and check every step with the user. Use whenever the user asks for pixel art of any kind (sprites, characters, creatures, effects, scenes, props, tiles, gems).
 license: GPL-3.0-or-later
 ---
 
@@ -73,6 +73,18 @@ A wrong area (a shoulder tinted like the head) shows up here, not after the anim
 - `P.pack(frames, { cols, pad })` puts frames of the same size in a grid on a clear background, with no labels and no checker. This is the sprite sheet for the game; `P.sheet` is only for showing. The result has `frame` with `w`, `h`, `cols`, `rows`, `count`.
 
 **Color and motion.** `P.palette(cols, n)`, `P.ramp`, `P.mix`, `P.ditherIndex`, `P.noise`, `P.fbm`, `P.rng(seed)`, `P.ease`.
+
+**Scenes and props.** Use these for anything drawn in code that should look real: rock, earth, trees, water, sky, gems, animal bodies.
+
+- `P.sky(buf, { cols, y0, y1 })` is a sky from top to horizon in flat bands. `P.clouds(buf, { base, h, cols, seed, amount, haze, hazeCol })` adds clouds that are lit on the sun side and flat and darker at the bottom.
+- `P.rockHeight({ sx, sy, seed, crack, tilt })` returns a height function for rock: blocks with cracks between them. `P.surface(buf, { height, cols, moss, shade, mask, x0, y0, x1, y1, relief, gain, light })` lights any height function, darkens cracks and puts `moss` colors on faces that point up. Use it for cliffs, stones, earth and wood. `shade(x, y)` multiplies the light, for wet or shadowed parts.
+- `P.branchTree(buf, { x, base, trunk, width, depth, spread, decay, up, clumpR, tipClumps, hang, hangTo, cols, bark, seed, haze, hazeCol, wind })` grows a trunk into branches with leaf clumps at the tips. Oak: `spread: 0.55, up: 0.15`. Poplar: `spread: 0.2, up: 0.5, depth: 5`. Willow: `spread: 0.85` with `hang` for the hanging strands. `P.conifer(buf, { x, base, h, rx, cols, bark })` is a pine. `P.tree` is a quick round tree for far away. All leaves go through `P.foliage`: small leaf cells, shadow inside the crown, holes at the edge. `haze` mixes in `hazeCol` for distance.
+- `P.grass(buf, { x0, x1, count, ground, hmin, hmax, cols, density, tall, t, T, freq, sway, period, shift })` draws blades of grass. `ground(x)` gives the y of the ground.
+- `P.reflect(buf, { y0, y1, t, T, cols, keep, falloff, squash, wob })` turns the rows from `y0` down into water that mirrors what is above it, with ripples. `cols` is the water color from near the line to deep. `P.mist(buf, { x, y, w, h, below, t, T, col, strength })` is see-through spray.
+- `P.solid(buf, prims, cols, { light, shade, dark, k })` draws a lit body from shapes melted together: `P.cap(ax, ay, bx, by, ra, rb)` (a tube that can get thinner) and `P.ell(x, y, rx, ry, rot)`. Use it for animal and human bodies, sacks, cloaks. `P.ik(hipX, hipY, footX, footY, upper, lower, dir)` returns the knee of a two-part leg; `dir` 1 or -1 picks which way it bends.
+- `new P.Gem({ size, cols, sigma, ior, tilt, lean })` draws a cut gem by following the light through it: it bends at the surface, bounces inside and gets darker the longer it travels. `sigma` is how fast red, green and blue are absorbed (ruby: `[0.32, 5.5, 4.2]`), `cols` the palette. `gem.frames(n)` gives n frames of one full turn, centered.
+- Loops: `P.loopNoise(x, y, t, T, speed)` is noise that moves and is back at the start when `t` reaches `T`. `P.WBuf` is a buffer that wraps from its right edge to its left edge, `P.tile(fn, period)` makes a height or noise function repeat with no seam, and `P.wrapBlit(dst, layer, shift)` draws a wrapped layer moved by `shift`. `P.blitScaled(dst, w, h, layer, shift, S)` draws a layer S times bigger into a plain pixel array at a shift that need not be a whole pixel: the pixels stay big, but the layer moves smoothly.
+- `P.leafFlicker(still, moved, frames, { density, maxY })` takes a tree layer drawn with no wind and one drawn with `wind`, and returns frames where only a few leaf pixels at the edges of the crowns move.
 
 **Effects.** These are taken from finished games. Change colors, sizes and timing to fit the request, but keep the method.
 
@@ -176,13 +188,47 @@ Ask the user what the effect should feel like and if they have an example (a gam
 
 `P.Flow`, `P.Flame` and `P.Smoke` are built this way. For a new effect, extend `P.Flow` instead of writing the loop again.
 
-## 5. Characters drawn from scratch
+## 5. Scenes, props and realism
+
+For scenes and props drawn in code (a river, a forest, a waterfall, a cave, a gem, a cart), follow these rules. They come from work the user had to correct many times.
+
+1. **Look at reality first.** Before writing code, think about how the real thing looks and how fast it moves, and turn real speeds into pixels per frame from the scale of the scene. Water drifts, leaves barely move, a cart rolls at walking speed. Make motion slower rather than faster. Too fast is the most common mistake.
+2. **Layers from far to near.** Sky, far forest, the main row, the subject, the near ground. Far layers get `haze`: less contrast and the color of the air.
+3. **One light.** Use one light direction for the whole scene, top left unless the user says otherwise. Draw rock, earth and wood with `P.surface` and a height function, never as flat color with noise on it.
+4. **Real trees.** Grow trees with `P.branchTree` and `P.conifer`, never as round blobs. Mix kinds and sizes, and put them close enough to overlap.
+5. **Water.** Water mirrors what is above it (`P.reflect`) and its ripples move slowly. Mist and spray are see-through.
+6. **Seamless loops.** Everything that moves is back at its start after the last frame:
+   - noise with `P.loopNoise`;
+   - a scrolling layer is a `P.WBuf` as wide as its period that moves exactly one period per loop, so its speed is period / frames;
+   - anything that repeats needs a whole number of repeats in the loop: a wheel radius where one loop turns it by a whole number of spoke steps, a walk cycle length that divides the frame count, a sway frequency that is a whole number.
+   Look at the last frame next to the first.
+7. **Camera.** When the camera moves sideways, near layers move faster than far ones and the sky stays still. For a smooth camera, build the frame S times bigger (4 is good) and draw each layer with `P.blitScaled` at its own shift. Only the camera is smooth: objects, wheels, leaves and characters stay on their own pixel grid unless the user asks otherwise.
+8. **Small motion stays small.** Leaves move by a few pixels at the edges of the crowns (`P.leafFlicker`), never the whole crown, and never the whole tree shifted. Grass sways by a pixel or two.
+9. **Gems, glass and crystal.** Use `P.Gem`. Light comes from strips with dark gaps between them, so the facets alternate between dark and bright. Pick each pixel's color as the nearest palette color, not by brightness alone, so the color stays red or blue in the shadows. Keep the bright parts small.
+10. **Long loops.** For long smooth loops, save an MP4 with ffmpeg at 50 fps. Make the GIF at a lower frame rate and size, shrink it with ffmpeg `palettegen`, and tell the user its size.
+
+**Animals and vehicles with no reference.** Ask for a reference first (section 1). If the user wants it from code anyway:
+
+1. Search the internet for how the real thing moves: studies and animation guides in text, not photos. Find the order of the legs, how long each foot stays on the ground, and which joints bend and when. Use those numbers. For a horse:
+   - a walk has four beats (left hind, left front, right hind, right front), and each foot is on the ground about 60% of the cycle;
+   - a trot moves the diagonal pairs together, and each foot is down about 40% of the cycle;
+   - a leg on the ground is straight and the fetlock sinks under the weight;
+   - a front leg that lifts folds its hoof back under the knee;
+   - the hock points back.
+2. Pick the gait from the speed. Slow is a walk. A trot at walking speed looks like slow motion.
+3. Take proportions from real measurements. For a horse, the body is about as long as the horse is tall at the shoulder, the leg up to the elbow is as long as the body is deep, and the head is about a third of the height. Build the body with `P.solid` and the legs with `P.ik`.
+4. A foot on the ground moves with the ground, at the speed of the layer it stands on, or it slides.
+5. Draw the subject 3 or 4 times bigger and check every frame of one cycle before putting it in the scene. Look for feet shaped like an "L", joints bending the wrong way, and a hip sticking out of the back.
+6. Wheels have thin spokes with gaps between them, a thin iron rim and a small hub, so they don't look like shields.
+
+## 6. Characters drawn from scratch
 
 When there is no reference, build characters from only a few pixels. Small characters drawn from scratch look good, big detailed ones look bad. If the user asks for a big detailed character without a reference, tell them this and ask for a reference, or ask if they still want it. Big detailed subjects are fine when they come from a reference.
 
-## 6. Check before you show
+## 7. Check before you show
 
 - Render an image or frames and look at them yourself before showing the user.
 - Never say a step is done without looking at the result.
+- For an animation, look at a numbered frame sheet and at the last frame next to the first.
 - Do only what was asked. Do not add text, effects, colors or features on your own.
 - When the user says something is wrong, change that one thing, show it again, and ask again.

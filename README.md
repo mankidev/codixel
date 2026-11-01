@@ -117,6 +117,10 @@ Hollowchain is a survivors-style game. The enemies are only 5 by 5 pixels.
 
 ![Waterfall animation](images/waterfall.gif)
 
+## Example: river
+
+![River animation](images/river.gif)
+
 ## Example: space backgrounds
 
 ![Blue, violet, crimson and emerald space backgrounds](images/space_backgrounds.png)

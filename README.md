@@ -56,6 +56,12 @@ Left: Claude Code drew the dragon from scratch. Right: Claude Code turned a refe
 
 ![Kinryu animation](images/kinryu.gif)
 
+## Spines
+
+![Black leopard walking, with its spine and leg bones](images/leopard_spine.gif)
+
+Codixel is good at understanding animal spines. It builds the body, legs and tail on the spine and moves them the way the real animal walks.
+
 ## Dither
 
 ![The same scene drawn four ways](images/dither.png)

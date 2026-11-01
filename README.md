@@ -29,10 +29,10 @@ Here the bones come before the pixels, because the god is put together from seve
 
 - [Remember Claude Code is not a painter, it only writes code](#claude-code-is-not-a-painter)
 - [Start from a real reference image](#example-kinryu)
-- [Give a reference to compare with](#example-astral-prison)
+- [Give a reference to compare with](#examples)
 - [Go step by step](#steps)
-- [Ask for how it should look, like "realistic"](#example-ocean)
-- [Build characters from only a few pixels](#example-mini-characters)
+- [Ask for how it should look, like "realistic"](#examples)
+- [Build characters from only a few pixels](#examples)
 - [Use dither only where two colors meet](#dither)
 - [Find sounds on the internet, don't let the AI make them](#sound)
 - [Never say "do this" or "copy this" and walk away, check every step](#never-do-this-or-copy-this-and-walk-away)
@@ -83,50 +83,6 @@ After every step, look at the result. Does it look the way you described it?
 
 If something is wrong, say exactly what is wrong and run the step again. Move on only when the step is right.
 
-## Example: Astral Prison
-
-![Astral Prison, reference vs result](images/astral_prison.png)
-
-Give the AI a picture to compare with. Then it knows what you want.
-
-![Astral Prison animation](images/astral_prison.gif)
-
-## Example: effects
-
-Fire, smoke and beams from `core/pixel.js`. It comes with the skill, so the AI starts from working code.
-
-![Beams, smoke explosion, fire breath and hell fire](images/core_effects.gif)
-
-## Example: mini characters
-
-![Mini characters](images/minis.gif)
-
-Characters made from only a few pixels.
-
-## Example: bullet hell
-
-![Hollowchain](images/hollowchain.gif)
-
-Hollowchain is a survivors-style game. The enemies are only 5 by 5 pixels.
-
-## Example: ocean
-
-![Ocean animation](images/ocean.gif)
-
-## Example: waterfall
-
-![Waterfall animation](images/waterfall.gif)
-
-## Example: river
-
-![River animation](images/river.gif)
-
-## Example: space backgrounds
-
-![Blue, violet, crimson and emerald space backgrounds](images/space_backgrounds.png)
-
-![Crimson background with moving layers](images/space_parallax.gif)
-
 ## Install
 
 ```
@@ -138,3 +94,25 @@ Claude Code loads it on the next start. It runs when you ask for pixel art.
 ## License
 
 GPL-3.0-or-later. See [LICENSE](LICENSE).
+
+## Examples
+
+![Astral Prison, reference vs result](images/astral_prison.png)
+
+![Astral Prison animation](images/astral_prison.gif)
+
+![Beams, smoke explosion, fire breath and hell fire](images/core_effects.gif)
+
+![Mini characters](images/minis.gif)
+
+![Hollowchain](images/hollowchain.gif)
+
+![Ocean animation](images/ocean.gif)
+
+![Waterfall animation](images/waterfall.gif)
+
+![River animation](images/river.gif)
+
+![Blue, violet, crimson and emerald space backgrounds](images/space_backgrounds.png)
+
+![Crimson background with moving layers](images/space_parallax.gif)

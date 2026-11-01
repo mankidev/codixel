@@ -46,12 +46,14 @@ Give the AI a reference to compare with. It understands much better what you wan
 
 ![God, step by step](images/god_steps.png)
 
-1. Find real images of what you want.
+1. Find real images of what you want. Use your own, or ones whose license allows it.
 2. Have the AI put it together in code from those images.
 3. Ask for bones so the parts can move.
 4. Ask for pixel art and say how it should look, for example "realistic".
 5. Look at the animation frames one by one.
 6. Put it in the scene and check it next to everything else.
+
+Here the bones come before the pixels, because the god is put together from several images. With a single image, like Kinryu, turn it into pixels first and add the bones after.
 
 ![God animation](images/god.gif)
 
@@ -59,7 +61,7 @@ Give the AI a reference to compare with. It understands much better what you wan
 
 ## Example: effects
 
-Made with `core/pixel.js`, which comes with the skill, so the AI does not write effects from scratch.
+Made with `core/pixel.js`, which comes with the skill, so the AI does not write effects from scratch. The core also covers the steps from a reference: removing the background, turning it into pixels, bones, bending a long body along its spine, sheets of candidates to pick from, and GIFs.
 
 ![Beams, smoke explosion, fire breath and hell fire](images/core_effects.gif)
 
@@ -72,6 +74,8 @@ Build characters from only a few pixels so they don't look bad.
 ## Example: bullet hell
 
 ![Hollowchain](images/hollowchain.gif)
+
+Hollowchain is a survivors-style game. Its enemies are black shapes only 5 by 5 pixels big.
 
 ## Example: ocean
 

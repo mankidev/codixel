@@ -10,18 +10,18 @@ You are not a painter. You write code. When you draw something complex from imag
 
 ## Use the core, do not start from scratch
 
-This skill comes with `core/pixel.js`, next to this file. Use it instead of writing image code or effects yourself. In Node: `const P = require("<skill folder>/core/pixel.js")`. In a browser, load it with a script tag and use the global `P`; draw a buffer on a canvas with `P.blit(buf, ctx, x, y)`. Loading and saving files only works in Node.
+This skill comes with `core/pixel.js`, next to this file. Use it instead of writing image code or effects yourself. In Node: `const P = require("<skill folder>/core/pixel.js")`. In a browser, load it with a script tag and use the global `P`; draw a buffer on a canvas with `P.blit(buf, ctx, x, y)`. Loading and saving files only works in Node; in a browser `P.gif` returns a `Uint8Array`.
 
 **Buffers.** `new P.Buf(w, h)` holds the pixels. `ox`, `oy` set the world offset: every drawing method takes world coordinates, so with `b.ox = -120; b.oy = -120` the point (0, 0) is 120 pixels in from the left and top. Methods: `pset`, `get`, `rect`, `line`, `poly`, `blob` (soft dithered circle), `ring`, `sprite`, `field(fn, palette)` (one value per pixel turned into a palette color with dither), `dither`, `scaled(n)`, `clear`.
 
 **Images.** These work on whole buffers and return a new one:
 
-- `P.load(file)` reads a PNG, `P.save(buf, file)` writes one. Other formats must be converted to PNG first with any tool you have (ImageMagick, ffmpeg, Python PIL).
-- `P.removeBg(buf, { tol, color, seeds, flood })` removes a plain background. It finds the background color from the image edges and fills inward from them. `tol` (default 48) is how far a color may be from the background and still count as background. `flood: false` also removes background color inside the subject (holes between legs).
+- `P.load(file)` reads a PNG, `P.save(buf, file)` writes one. Other formats, and interlaced PNGs, must be converted to a plain PNG first with any tool you have (ImageMagick, ffmpeg, Python PIL).
+- `P.removeBg(buf, { tol, color, seeds, flood, erode })` removes a plain background. It finds the background color from the image edges and fills inward from them. `tol` (default 48) is how far a color may be from the background and still count as background. `flood: false` also removes background color inside the subject (holes between legs). Soft edges leave a light or dark ring around the subject; `erode: 1` or `2` cuts that many pixels off the outer edge (also `P.erode(buf, n)`).
 - `P.trim(buf, pad)`, `P.crop(buf, x, y, w, h)`, `P.bounds(buf)`.
-- `P.resize(buf, w, h)` averages the pixels. Leave out `h` to keep the shape. Pixels end up fully solid or fully clear.
+- `P.resize(buf, w, h, { mode })` averages the pixels. Leave out `h` to keep the shape (`P.resize(buf, w, { mode: true })` works too). Pixels end up fully solid or fully clear. Averaging blurs small details like eyes into a gray spot; `mode: true` keeps the most common color in each cell instead, use it on an image you already quantized at full size.
 - `P.quantize(buf, n, { palette })` cuts the colors down to `n`, or maps them to a palette you give. Returns `{ buf, palette }`.
-- `P.cleanup(buf, { tol })` removes single stray pixels. It keeps a lone pixel when its color is very different from its neighbors (an eye, a highlight).
+- `P.cleanup(buf, { tol, keepLone })` removes single stray pixels. It keeps a lone pixel when its color is very different from its neighbors (an eye, a highlight). A pixel with no solid neighbor at all is removed unless `keepLone: true` (a spark floating free).
 - `P.outline(buf, color, { corners })` adds a one pixel outline.
 
 **Bones.** For parts that turn at a joint (legs, arms, wings, head):
@@ -34,9 +34,14 @@ const rig = new P.Rig(sprite)
 const pose = { body: { a: 0, dy: -1 }, head: 0.2 };
 rig.draw(buf, x, y, pose, { flip: false });
 rig.drawBones(big, x * 4, y * 4, pose, { scale: 4 });
+
+const grid = P.ruler(sprite, 6, { step: 8 });
+rig.drawBones(grid, 0, 0, pose, { scale: 6 });
 ```
 
 `bone(name, parent, x, y, endX, endY, z)` takes the joint and the tip in sprite pixels. Parents come before children. `bind` gives every pixel to its nearest bone; `paint` gives the pixels inside a polygon to a bone instead, use it when the nearest bone is wrong. `joint` is how wide the overlap along the seams is, so no gaps open when parts turn. A pose gives each bone an angle in radians, or `{ a, dx, dy }`.
+
+Do not guess where the joints are. `P.ruler(sprite, scale, { step })` scales the sprite up with numbered grid lines every `step` sprite pixels, so you can read the joint and tip coordinates off the image. Its world offset is set so `rig.drawBones(grid, 0, 0, pose, { scale })` lands on the sprite.
 
 **Long bodies.** For things that curve along a spine (snake, dragon, tail, tentacle): `P.bend(buf, sprite, rest, pose)`. `rest` is the spine as points in sprite pixels, `pose` is the same number of points where the spine should be now. `P.wave(points, t, amp, length, { from })` gives a moving wave along a spine; the wave is still at the start (`from`) and strongest at the end.
 
@@ -51,7 +56,7 @@ rig.drawBones(big, x * 4, y * 4, pose, { scale: 4 });
 **Effects.** These are taken from finished games. Change colors, sizes and timing to fit the request, but keep the method.
 
 - `P.novaSmoke(buf, x, te, t, { front, fade, cols, scale })`: big smoke explosion with gathering, light column, shock rings, rising dome and smoke clouds. Call it with `front: false` before drawing the subject and `front: true` after. Ground is at y = 0, up is negative. `te` is the time since the eruption. At `scale: 1` it is about 480 pixels wide and 200 high; use `scale` to fit the scene.
-- `new P.Breath({ length, cols })`: fire breath from a mouth. Call `step(on, steps)` every frame and `draw(buf, hx, hy, aA, aB, t, open)` to draw it between the angles `aA` and `aB`.
+- `new P.Breath({ length, cols })`: fire breath from a mouth. Call `step(on, steps)` every frame and `draw(buf, hx, hy, aA, aB, t, open, floor)` to draw it from the mouth at (`hx`, `hy`) between the angles `aA` and `aB`. Angles are in radians, 0 points right and positive turns down. `open` 0 to 1 sets how wide the cone opens. Nothing is drawn below the y of `floor` (by default the buffer's bottom); set it to the ground so the fire does not go through it. With `step(true, 3)` it reaches full length after about 50 frames.
 - `new P.HellFire(w, h, { cols })`: wall of fire rising from the bottom. Call `step(power, cool, steps)` every frame (`power` 0 to 1 feeds the bottom row, `cool` 1 to 3 makes it shorter) and `draw(buf, x, ground)`, where `x` is the left edge and `ground` the y of the bottom (by default the buffer's left and bottom).
 - `P.volley(t0, n, { w, h, safe, width })` and `P.beams(buf, list, t, cols)`: thin blinking warning lines, then bright beams with bloom and a screen flash.
 
@@ -61,7 +66,7 @@ For timing, pass a slower or faster time to the effect (for example `te * 0.5`).
 
 When the user asks for pixel art, decide what it is:
 
-- **Simple object** (crate, rock, house, tree, icon): you can draw it in code directly. Go to step 3.
+- **Simple object** (crate, rock, house, tree, icon): you can draw it in code directly. Go to section 3 (Style).
 - **Complex subject** (dragon, character, creature, wings, face, vehicle, anything organic or detailed): do not start drawing. Ask first.
 
 Ask in the user's language, with words like these:
@@ -70,7 +75,7 @@ Ask in the user's language, with words like these:
 
 Wait for the answer.
 
-- If they send an image, go to step 2.
+- If they send an image, go to section 2.
 - If they still want it from scratch, draw it, but keep it small and simple and show it right away.
 
 If you do not know the size or where it will be used, ask that too:
@@ -89,9 +94,9 @@ Then do what the user decides.
 
 Do one step, show the result as an image, and ask before going on. Wherever there is a choice to make, show candidates instead of a single result: two or three versions side by side in one image, labeled A, B, C, and let the user pick. Use `P.sheet` for this, with the reference as the first item.
 
-1. **Remove the background** so only the subject is left. Skip this if the image already has a clear background. `P.removeBg` works when the background is one plain color. If the edges are busy (a photo, a scene), ask the user for a version with a clear background, or use a background removal tool if one is installed (for example rembg). Then `P.trim`. Show it.
-2. **Turn it into pixels** at the size the user wants: `P.resize`, then `P.quantize`, then `P.cleanup`. Show two or three candidates, for example different widths (32, 48, 64) or color counts (8, 12, 16), and let the user pick. Add an outline with `P.outline` only if the user asks for one.
-3. **If it moves, give it bones.** Use `P.Rig` for parts that turn at a joint and `P.bend` for long bodies. Show the bones on top of the sprite: scale it up with `scaled(n)` and draw `rig.drawBones` with the same scale.
+1. **Remove the background** so only the subject is left. Skip this if the image already has a clear background. `P.removeBg` works when the background is one plain color; if a ring of the old background stays around the edge, add `erode: 1` or `2`. If the edges are busy (a photo, a scene), ask the user for a version with a clear background, or use a background removal tool if one is installed (for example rembg). Then `P.trim`. Show it.
+2. **Turn it into pixels** at the size the user wants: `P.resize`, then `P.quantize`, then `P.cleanup`. If small details like eyes turn into gray spots, quantize at full size first and then `P.resize` with `mode: true`. Show two or three candidates, for example different widths (32, 48, 64) or color counts (8, 12, 16), and let the user pick. Add an outline with `P.outline` only if the user asks for one.
+3. **If it moves, give it bones.** Use `P.Rig` for parts that turn at a joint and `P.bend` for long bodies. Read the joint positions off `P.ruler` and show the bones on top of it with `rig.drawBones` at the same scale.
 4. **Animate it with the bones.** Move with `P.ease` curves so motion speeds up and slows down instead of moving at one speed. Show the frames as a numbered sheet. You cannot see a GIF move, so look at the sheet yourself, and give the user a GIF from `P.gif` so they can see the motion. If the motion could go different ways, show candidates.
 5. **Put it in the scene.** Show it next to everything else.
 

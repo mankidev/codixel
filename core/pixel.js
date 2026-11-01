@@ -410,7 +410,7 @@ class Breath {
     this.seed = sd;
   }
 
-  draw(buf, hx, hy, aA, aB, t, open = 1, floor = 1) {
+  draw(buf, hx, hy, aA, aB, t, open = 1, floor = buf.oy + buf.h) {
     const LMAX = this.LMAX, V = this.V, a = this.a, pal = this.pal;
     const mid = (aA + aB) / 2, half = ((aB - aA) / 2) * (0.25 + 0.75 * open) * (V - 1) / (V - 19), dA = (half * 2) / (V - 1), lo = mid - half, idA = 1 / dA;
     for (let k = 0; k < LMAX; k++) this.wind[k] = Math.sin(k * 0.06 - t * 7) * (1 + k * 0.02) - lo * idA;
@@ -606,7 +606,7 @@ P.removeBg = (buf, opt = {}) => {
   const near = (i) => !(src[i] >>> 24) || P.dist2(P.unpack(src[i]), bg) <= tol2;
   if (opt.flood === false) {
     for (let i = 0; i < W * H; i++) if (near(i)) out.px[i] = 0;
-    return out;
+    return P.erode(out, opt.erode ?? 0);
   }
   const seen = new Uint8Array(W * H), q = new Int32Array(W * H);
   let qh = 0, qt = 0;
@@ -626,22 +626,48 @@ P.removeBg = (buf, opt = {}) => {
     if (i >= W) push(i - W);
     if (i < W * (H - 1)) push(i + W);
   }
-  return out;
+  return P.erode(out, opt.erode ?? 0);
 };
 
-P.resize = (buf, w, h = Math.max(1, Math.round((w * buf.h) / buf.w)), opt = {}) => {
-  const out = new Buf(w, h), sx = buf.w / w, sy = buf.h / h, cut = (opt.alpha ?? 0.5) * 255;
+P.erode = (buf, n = 1) => {
+  const W = buf.w, H = buf.h;
+  let cur = buf;
+  for (let k = 0; k < (n | 0); k++) {
+    const s = cur.px, out = new Buf(W, H);
+    out.px.set(s);
+    for (let y = 0; y < H; y++)
+      for (let x = 0; x < W; x++) {
+        const i = y * W + x;
+        if (!(s[i] >>> 24)) continue;
+        if ((x > 0 && !(s[i - 1] >>> 24)) || (x < W - 1 && !(s[i + 1] >>> 24)) || (y > 0 && !(s[i - W] >>> 24)) || (y < H - 1 && !(s[i + W] >>> 24))) out.px[i] = 0;
+      }
+    cur = out;
+  }
+  return cur;
+};
+
+P.resize = (buf, w, h, opt = {}) => {
+  if (h && typeof h === "object") (opt = h), (h = undefined);
+  h = h ?? Math.max(1, Math.round((w * buf.h) / buf.w));
+  const out = new Buf(w, h), sx = buf.w / w, sy = buf.h / h, cut = (opt.alpha ?? 0.5) * 255, votes = new Map();
   for (let y = 0; y < h; y++) {
     const y0 = Math.min(buf.h - 1, Math.floor(y * sy)), y1 = Math.min(buf.h, Math.max(y0 + 1, Math.floor((y + 1) * sy)));
     for (let x = 0; x < w; x++) {
       const x0 = Math.min(buf.w - 1, Math.floor(x * sx)), x1 = Math.min(buf.w, Math.max(x0 + 1, Math.floor((x + 1) * sx)));
       let r = 0, g = 0, b = 0, a = 0, n = 0;
+      votes.clear();
       for (let j = y0; j < y1; j++)
         for (let i = x0; i < x1; i++) {
           const c = buf.px[j * buf.w + i], al = c >>> 24;
           (r += (c & 255) * al), (g += ((c >>> 8) & 255) * al), (b += ((c >>> 16) & 255) * al), (a += al), n++;
+          if (opt.mode && al) votes.set(c | 0xff000000, (votes.get(c | 0xff000000) || 0) + al);
         }
-      if (a / n >= cut && a > 0) out.px[y * w + x] = P.rgb(Math.round(r / a), Math.round(g / a), Math.round(b / a));
+      if (!(a / n >= cut && a > 0)) continue;
+      if (opt.mode) {
+        let top = 0, best = -1;
+        for (const [c, v] of votes) if (v > best) (best = v), (top = c);
+        out.px[y * w + x] = top >>> 0;
+      } else out.px[y * w + x] = P.rgb(Math.round(r / a), Math.round(g / a), Math.round(b / a));
     }
   }
   return out;
@@ -1013,6 +1039,30 @@ P.sheet = (items, opt = {}) => {
   return out;
 };
 
+P.ruler = (buf, scale = 4, opt = {}) => {
+  const step = opt.step ?? 8, ink = opt.ink ?? [235, 235, 235], line = opt.line ?? [255, 90, 160];
+  const ml = P.textWidth(String(Math.max(buf.w, buf.h))) + 4, mt = 9, W = buf.w * scale + ml + 1, H = buf.h * scale + mt + 1, out = new Buf(W, H);
+  out.clear(opt.bg ?? [22, 22, 26]);
+  const k1 = P.col([44, 44, 50]), k2 = P.col([36, 36, 42]);
+  for (let j = 0; j < buf.h * scale; j++)
+    for (let i = 0; i < buf.w * scale; i++) {
+      const v = buf.px[((j / scale) | 0) * buf.w + ((i / scale) | 0)];
+      out.px[(mt + j) * W + ml + i] = v >>> 24 ? v : ((i >> 3) ^ (j >> 3)) & 1 ? k1 : k2;
+    }
+  const tint = (x, y) => out.put(y * W + x, P.col(P.mix(P.unpack(out.px[y * W + x]), line, 0.55)));
+  for (let gx = 0; gx <= buf.w; gx += step) {
+    for (let y = mt - 2; y < H; y++) tint(ml + gx * scale, y);
+    P.text(out, ml + gx * scale + 2, 1, gx, ink);
+  }
+  for (let gy = 0; gy <= buf.h; gy += step) {
+    for (let x = ml - 2; x < W; x++) tint(x, mt + gy * scale);
+    P.text(out, 1, mt + gy * scale + 2, gy, ink);
+  }
+  out.ox = -ml;
+  out.oy = -mt;
+  return out;
+};
+
 P.lzw = (idx, mcs) => {
   const out = [], clear = 1 << mcs, eoi = clear + 1;
   let cur = 0, bits = 0, size = mcs + 1, next = eoi + 1, dict = new Map();
@@ -1101,7 +1151,7 @@ P.gif = (frames, opt = {}) => {
     out.push(0);
   });
   out.push(0x3b);
-  return Buffer.from(out);
+  return typeof Buffer !== "undefined" ? Buffer.from(out) : new Uint8Array(out);
 };
 
 P.blit = (buf, ctx, x = 0, y = 0) => ctx.putImageData(new ImageData(new Uint8ClampedArray(buf.px.buffer.slice(0)), buf.w, buf.h), x, y);

@@ -486,6 +486,93 @@ class HellFire {
 }
 P.HellFire = HellFire;
 
+P.FLAME_COLS = [[110, 22, 8], [185, 45, 10], [232, 96, 20], [250, 156, 40], [255, 212, 96], [255, 246, 206]];
+P.SMOKE_COLS = [[140, 140, 148], [214, 214, 220]];
+
+class Flow {
+  constructor(opt = {}, def = {}) {
+    const o = { ...def, ...opt };
+    this.o = o;
+    const cols = o.cols || P.FLAME_COLS;
+    this.rgb = o.alpha ? o.alpha.map((_, i) => P.ramp(cols, o.alpha.length > 1 ? i / (o.alpha.length - 1) : 0).map(Math.round)) : cols;
+    this.pal = this.rgb.map(P.col);
+    this.r = P.rng(o.seed ?? 9);
+    this.bits = [];
+  }
+
+  value(dx, h) {
+    return 1 - h - dx * dx;
+  }
+
+  profile(h) {
+    return 1;
+  }
+
+  draw(buf, x, ground, t) {
+    const o = this.o, n = this.pal.length, top = ground - o.height * 1.35, bot = ground + o.height * 0.12, warp = o.warp ?? 0, calm = o.calm ?? 0.35;
+    let wide = 0;
+    for (let k = 0; k <= 16; k++) wide = Math.max(wide, this.profile(-0.12 + (k / 16) * 1.47));
+    const reach = o.width * wide * 1.6 + o.swayAmp + warp;
+    const X0 = Math.max(buf.ox, Math.floor(x - reach)), X1 = Math.min(buf.ox + buf.w - 1, Math.ceil(x + reach));
+    const Y0 = Math.max(buf.oy, Math.floor(top)), Y1 = Math.min(buf.oy + buf.h - 1, Math.ceil(bot));
+    for (let wy = Y0; wy <= Y1; wy++) {
+      const h = (ground - wy) / o.height, pw = this.profile(h);
+      if (pw <= 0) continue;
+      const sway = (P.fbm(h * 1.5, t * o.sway, 2, 7) - 0.5) * o.swayAmp * h * h, hw = Math.max(0.5, o.width * pw);
+      for (let wx = X0; wx <= X1; wx++) {
+        let sx = wx - sway;
+        if (warp) sx += (P.fbm(sx * o.fx * 0.6, wy * o.fy * 0.6 + t * o.speed * 0.6, 2, 3) - 0.5) * warp * Math.max(0, h);
+        const dx = (sx - x) / hw, nz = P.fbm(sx * o.fx, wy * o.fy + t * o.speed, 3, 1);
+        const v = this.value(dx, h) + (nz - 0.5) * o.rough * (calm + h);
+        if (v <= o.cut) continue;
+        const k = P.ditherIndex(P.clamp(v * o.gain), n, wx, wy, o.dither), i = (wy - buf.oy) * buf.w + wx - buf.ox;
+        if (!o.alpha) buf.put(i, this.pal[k]);
+        else if (buf.px[i] >>> 24) buf.put(i, P.col(P.mix(P.unpack(buf.px[i]), this.rgb[k], o.alpha[k])));
+        else buf.put(i, ((Math.round(o.alpha[k] * 255) << 24) | (this.pal[k] & 0xffffff)) >>> 0);
+      }
+    }
+    const r = this.r;
+    if (o.bits && r() < o.bits) this.bits.push({ x: x + (r() - 0.5) * o.width, y: ground - o.height * 0.6, vy: -0.5 - r() * 0.5, ph: r() * 6, age: 0, life: 14 + r() * 14 });
+    for (const b of this.bits) {
+      (b.y += b.vy), (b.x += Math.sin(b.age * 0.35 + b.ph) * 0.5), b.age++;
+      const k = b.age / b.life;
+      if (P.bt(b.x, b.y) < 1 - k) buf.pset(b.x, b.y, this.pal[k < 0.5 ? n - 2 : n - 3]);
+    }
+    this.bits = this.bits.filter((b) => b.age <= b.life);
+  }
+}
+P.Flow = Flow;
+
+class Flame extends Flow {
+  constructor(opt = {}) {
+    super(opt, { height: 48, width: 14, speed: 3.4, fx: 0.16, fy: 0.11, rough: 1.45, sway: 1.6, swayAmp: 9, bits: 0.45, cut: 0.04, gain: 1.02, dither: 0.4 });
+  }
+
+  value(dx, h) {
+    return 1 - h * 1.05 - dx * dx * 0.75;
+  }
+
+  profile(h) {
+    return Math.pow(Math.max(0, 1 - h * 0.85), 0.9) * Math.sqrt(P.clamp((h + 0.08) / 0.18));
+  }
+}
+P.Flame = Flame;
+
+class Smoke extends Flow {
+  constructor(opt = {}) {
+    super(opt, { cols: P.SMOKE_COLS, alpha: [0.08, 0.18, 0.32, 0.5, 0.7, 0.85], height: 84, width: 2.5, speed: 1.5, fx: 0.12, fy: 0.09, rough: 1.3, calm: 0.03, sway: 0.7, swayAmp: 8, warp: 45, bits: 0, cut: 0.02, gain: 1.1, dither: 0.5 });
+  }
+
+  value(dx, h) {
+    return 0.8 - h * 0.5 - dx * dx * 0.65 - Math.max(0, h - 0.4) * 0.9;
+  }
+
+  profile(h) {
+    return h < -0.02 ? 0 : 0.8 + h * 5.5;
+  }
+}
+P.Smoke = Smoke;
+
 P.dist2 = (a, b) => {
   const dr = a[0] - b[0], dg = a[1] - b[1], db = a[2] - b[2];
   return dr * dr + dg * dg + db * db;

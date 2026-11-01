@@ -66,6 +66,12 @@ Made with `core/pixel.js`, which comes with the skill, so the AI does not write 
 
 ![Beams, smoke explosion, fire breath and hell fire](images/core_effects.gif)
 
+## Example: fire
+
+![Fire without and with Codixel](images/fire_compare.gif)
+
+Left: Claude Code made a fire without Codixel. Right: the same fire with Codixel, after asking for "realistic". Codixel builds it from the shape of a real flame and noise that moves up, so the fire stays one body and breaks into tongues at the top.
+
 ## Dither
 
 ![The same scene drawn four ways](images/dither.png)

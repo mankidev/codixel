@@ -80,6 +80,8 @@ A wrong area (a shoulder tinted like the head) shows up here, not after the anim
 - `new P.Breath({ length, cols })`: fire breath from a mouth. Call `step(on, steps)` every frame and `draw(buf, hx, hy, aA, aB, t, open, floor)` to draw it from the mouth at (`hx`, `hy`) between the angles `aA` and `aB`. Angles are in radians, 0 points right and positive turns down. `open` 0 to 1 sets how wide the cone opens. Nothing is drawn below the y of `floor` (by default the buffer's bottom); set it to the ground so the fire does not go through it. With `step(true, 3)` it reaches full length after about 50 frames.
 - `new P.HellFire(w, h, { cols })`: wall of fire rising from the bottom. Call `step(power, cool, steps)` every frame (`power` 0 to 1 feeds the bottom row, `cool` 1 to 3 makes it shorter) and `draw(buf, x, ground)`, where `x` is the left edge and `ground` the y of the bottom (by default the buffer's left and bottom).
 - `P.volley(t0, n, { w, h, safe, width })` and `P.beams(buf, list, t, cols)`: thin blinking warning lines, then bright beams with bloom and a screen flash.
+- `new P.Flame(opt)` and `new P.Smoke(opt)`: a realistic flame and a realistic smoke column, made with the method in section 4. Call `draw(buf, x, ground, t)` every frame, with `x` the center and `ground` the y of the bottom. Options: `height`, `width`, `speed` (how fast the noise rises), `rough` (how broken the edges are), `sway` and `swayAmp` (how much the top swings), `bits` (chance of a spark each frame, 0 for none), `fx` and `fy` (noise size, smaller makes bigger shapes), `cols`. A calm candle is about `{ height: 40, width: 11, speed: 2.2, rough: 1, swayAmp: 5, bits: 0.15 }`. Smoke is see-through and needs room: about 84 pixels high by default. To have it rise from a flame, set its `ground` a few pixels below the flame's tip and draw it first, so the flame is in front.
+- `P.Flow` is the base of both. For another effect (steam, a magic aura, a waterfall), extend it and give it `profile(h)`, the half width at height `h` (0 at the ground, 1 at `height`, 0 for nothing), and `value(dx, h)`, how strong the effect is at that spot without noise (`dx` is -1 to 1 across the width). `warp` bends the noise sideways more the higher it goes, so the effect curls. `calm` is how much noise there is at the base (0 keeps it as a thin, steady stream). `alpha`, a list of opacities from faint to strong, makes it see-through: each band is mixed with what is already in the buffer, and on a clear buffer the pixel keeps that opacity. A GIF cannot be see-through, so fill the background before making one.
 
 For timing, pass a slower or faster time to the effect (for example `te * 0.5`).
 
@@ -158,6 +160,20 @@ Effects are not drawn from a reference. You build them in code, frame by frame. 
 - For beams: show thin warning lines first, then the bright beam.
 
 Ask the user what the effect should feel like and if they have an example (a game, a video, a picture), then show two or three candidates as short animations and let them pick. Change speed, size, color and brightness only when the user asks.
+
+**When the user says "realistic".** This works for any effect: fire, smoke, steam, water, magic, explosions.
+
+1. Think about how the real thing looks and moves before writing code, or ask for a video of it. Fire narrows as it rises and tears into tongues that break off. Smoke grows wider as it rises, rolls and thins out. An explosion pushes out from a center.
+2. Do not use a pixel-by-pixel simulation (the Doom fire grid) for this. Every pixel decides on its own, so the result looks grainy and noisy, not like one body.
+3. Build one value per pixel from two parts: the shape of the real thing (wide at the bottom and narrow at the top for a flame) and noise that moves the way the material moves (up for fire and smoke, out from the center for an explosion). Let the noise and the sway grow toward the free end, so the base stays calm and the top breaks up.
+4. Draw only where the value is above a cut. This gives a solid body with torn edges and pieces that break off by themselves.
+5. Color it in flat bands with dither only where two bands meet. Keep the brightest part small, at the source. If it is too big, the effect turns into a white blob. Edges and tips get the darkest color.
+6. Smoke, steam, fog and mist are not solid and do not glow. Make them see-through with `alpha`, with no bright core. They leave the source as a thin stream (`calm` near 0), curl and spread as they rise (`warp`, a profile that grows with height), and slowly thin out until they are gone. Give them a few very faint bands so the top fades instead of ending in a hard edge.
+7. Add only a few particles. They are not the effect itself.
+8. Make two or three candidates by changing only the numbers (calm and lively, for example), show them side by side, and let the user pick.
+9. Check every candidate on a frame sheet, and fix one thing at a time.
+
+`P.Flow`, `P.Flame` and `P.Smoke` are built this way. For a new effect, extend `P.Flow` instead of writing the loop again.
 
 ## 5. Characters drawn from scratch
 

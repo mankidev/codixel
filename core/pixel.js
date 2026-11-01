@@ -770,6 +770,8 @@ P.inPoly = (x, y, pts) => {
   return ins;
 };
 
+P.BONE_COLS = [[255, 70, 70], [70, 190, 255], [255, 220, 50], [110, 230, 80], [200, 100, 255], [255, 140, 30], [40, 230, 200], [255, 100, 200], [150, 150, 255], [240, 240, 240]];
+
 class Rig {
   constructor(src) {
     this.src = src;
@@ -873,6 +875,32 @@ class Rig {
           buf.pset(flip ? x + w - 1 - X : x + X, y + Y, px[i]);
         }
     }
+  }
+
+  boneColor(name) {
+    const k = typeof name === "number" ? name : this.index(name);
+    return P.BONE_COLS[k % P.BONE_COLS.length];
+  }
+
+  ownerMap(opt = {}) {
+    if (!this.owner) this.bind();
+    const { w, h, px } = this.src, out = new Buf(w, h), k = opt.mix ?? 0.65;
+    for (let i = 0; i < w * h; i++) {
+      const o = this.owner[i];
+      if (o >= 0) out.px[i] = P.col(P.mix(P.unpack(px[i]), this.boneColor(o), this.joint[i] ? k * 0.4 : k));
+    }
+    return out;
+  }
+
+  legend(scale = 2) {
+    const lh = 6 * scale, out = new Buf(Math.max(...this.bones.map((b) => P.textWidth(b.name, scale))) + 6 * scale + 6, this.bones.length * lh + 3);
+    out.clear([22, 22, 26]);
+    this.bones.forEach((b, k) => {
+      const y = 2 + k * lh;
+      out.rect(2, y, 2 + 5 * scale, y + 5 * scale, this.boneColor(k));
+      P.text(out, 4 + 6 * scale, y, b.name, [235, 235, 235], scale);
+    });
+    return out;
   }
 
   drawBones(buf, x, y, p = {}, opt = {}) {
@@ -1036,6 +1064,19 @@ P.sheet = (items, opt = {}) => {
     }
     y0 += rh[r] + lh + gap;
   }
+  return out;
+};
+
+P.pack = (frames, opt = {}) => {
+  const fw = frames[0].w, fh = frames[0].h, pad = opt.pad ?? 0;
+  if (frames.some((f) => f.w !== fw || f.h !== fh)) throw new Error("all frames must be the same size");
+  const cols = Math.max(1, Math.min(opt.cols ?? frames.length, frames.length)), rows = Math.ceil(frames.length / cols);
+  const out = new Buf(cols * (fw + pad) - pad, rows * (fh + pad) - pad);
+  frames.forEach((f, i) => {
+    const x0 = (i % cols) * (fw + pad), y0 = ((i / cols) | 0) * (fh + pad);
+    for (let j = 0; j < fh; j++) out.px.set(f.px.subarray(j * fw, (j + 1) * fw), (y0 + j) * out.w + x0);
+  });
+  out.frame = { w: fw, h: fh, cols, rows, count: frames.length, pad };
   return out;
 };
 

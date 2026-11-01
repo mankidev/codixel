@@ -49,10 +49,10 @@ Left: Claude Code drew the dragon from scratch. Right: Claude Code turned a refe
 
 ![Kinryu, step by step](images/kinryu_steps.png)
 
-1. Start from one still of a golden dragon.
-2. Remove the background and turn it into pixels.
-3. Find the spine from head to tail and move the body along it.
-4. Put it in the scene: the dragon comes down from the sky, roars and breathes fire.
+1. Start from one picture of a gold dragon.
+2. Take off the background and make it pixels.
+3. Find the line from head to tail and move the body along it.
+4. Put it in the scene.
 
 ![Kinryu animation](images/kinryu.gif)
 
@@ -93,13 +93,13 @@ If something is wrong, say exactly what is wrong and run the step again. Move on
 
 ![Astral Prison, reference vs result](images/astral_prison.png)
 
-Give the AI a reference to compare with. It understands much better what you want.
+Give the AI a picture to compare with. Then it knows what you want.
 
 ![Astral Prison animation](images/astral_prison.gif)
 
 ## Example: effects
 
-Made with `core/pixel.js`, which comes with the skill, so the AI does not write effects from scratch. The core also covers the steps from a reference: removing the background, turning it into pixels, bones, bending a long body along its spine, sheets of candidates to pick from, and GIFs.
+Fire, smoke and beams from `core/pixel.js`. It comes with the skill, so the AI starts from working code.
 
 ![Beams, smoke explosion, fire breath and hell fire](images/core_effects.gif)
 
@@ -107,19 +107,15 @@ Made with `core/pixel.js`, which comes with the skill, so the AI does not write 
 
 ![Mini characters](images/minis.gif)
 
-Build characters from only a few pixels so they don't look bad.
+Characters made from only a few pixels.
 
 ## Example: bullet hell
 
 ![Hollowchain](images/hollowchain.gif)
 
-Hollowchain is a survivors-style game. Its enemies are black shapes only 5 by 5 pixels big.
+Hollowchain is a survivors-style game. The enemies are only 5 by 5 pixels.
 
 ## Example: ocean
-
-![Ocean, before and after "make it more realistic"](images/ocean_before_after.png)
-
-Before and after asking for "more realistic".
 
 ![Ocean animation](images/ocean.gif)
 
@@ -127,11 +123,11 @@ Before and after asking for "more realistic".
 
 ![Blue, violet, crimson and emerald space backgrounds](images/space_backgrounds.png)
 
-There are four color themes: blue, violet, crimson and emerald. Each one has five layers that tile without a seam: empty space, far stars, nebula, middle stars and near stars.
+There are four colors. Each one has five layers that repeat with no seam.
 
 ![Crimson background with moving layers](images/space_parallax.gif)
 
-Each layer moves at its own speed, so the near stars go past faster than the far ones.
+Each layer moves at its own speed.
 
 ## Install
 

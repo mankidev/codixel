@@ -107,6 +107,8 @@ If you do not know the size or where it will be used, ask that too:
 
 > "What size should it be, and where will it go (game scene, icon, background)?"
 
+**Only the user brings references.** Do not search the web for photos or videos, and do not download any, unless the user gives you one or asks you to find one. If there is no reference, ask for one. If the user has none, draw it in code.
+
 **Where the reference comes from.** If the user's own photo or drawing, or an image with a license that allows it (public domain, CC0, CC BY), there is nothing to ask. If it looks like someone else's artwork and the result will be published or sold, say so once:
 
 > "This looks like someone else's art. If the game will be published, you need their permission, or we can use it only for the pose and colors, or find a free image like it."
@@ -149,7 +151,7 @@ Build on the one the user picks. If they like parts of different candidates, com
 
 ## 4. Effects (fire, smoke, beams, explosions)
 
-Effects are not drawn from a reference. You build them in code, frame by frame. Start from the effects in `core/pixel.js` when one fits:
+Effects are not drawn from a reference. You build them in code, frame by frame. Do not turn a photo or a video of the real thing into pixels for an effect, not even to make it look realistic. Start from the effects in `core/pixel.js` when one fits:
 
 - Give every pixel a value: heat for fire, density for smoke, brightness for light. Get it from noise that moves over time.
 - Turn the value into a color with a ramp from dark to bright, ending in white for the hottest or brightest part.
@@ -163,7 +165,7 @@ Ask the user what the effect should feel like and if they have an example (a gam
 
 **When the user says "realistic".** This works for any effect: fire, smoke, steam, water, magic, explosions.
 
-1. Think about how the real thing looks and moves before writing code, or ask for a video of it. Fire narrows as it rises and tears into tongues that break off. Smoke grows wider as it rises, rolls and thins out. An explosion pushes out from a center.
+1. Think about how the real thing looks and moves before writing code, or ask the user for a video of it to watch. The video is only for looking at how it moves; the effect is still built in code. Fire narrows as it rises and tears into tongues that break off. Smoke grows wider as it rises, rolls and thins out. An explosion pushes out from a center.
 2. Do not use a pixel-by-pixel simulation (the Doom fire grid) for this. Every pixel decides on its own, so the result looks grainy and noisy, not like one body.
 3. Build one value per pixel from two parts: the shape of the real thing (wide at the bottom and narrow at the top for a flame) and noise that moves the way the material moves (up for fire and smoke, out from the center for an explosion). Let the noise and the sway grow toward the free end, so the base stays calm and the top breaks up.
 4. Draw only where the value is above a cut. This gives a solid body with torn edges and pieces that break off by themselves.

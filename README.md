@@ -4,6 +4,10 @@
 
 Codixel is a Claude Code skill for making pixel art with AI: game sprites, characters, animations and effects like fire, smoke and beams. It covers how to describe what you want, the steps from a reference image to a finished animated sprite, and why you have to check every step.
 
+![Fire without and with Codixel](images/fire_compare.gif)
+
+Left: without Codixel. Right: with Codixel.
+
 ## What to do
 
 - [Remember Claude Code is not a painter, it only writes code](#claude-code-is-not-a-painter)
@@ -65,12 +69,6 @@ Here the bones come before the pixels, because the god is put together from seve
 Made with `core/pixel.js`, which comes with the skill, so the AI does not write effects from scratch. The core also covers the steps from a reference: removing the background, turning it into pixels, bones, bending a long body along its spine, sheets of candidates to pick from, and GIFs.
 
 ![Beams, smoke explosion, fire breath and hell fire](images/core_effects.gif)
-
-## Example: fire
-
-![Fire without and with Codixel](images/fire_compare.gif)
-
-Left: Claude Code made a fire without Codixel. Right: the same fire with Codixel, after asking for "realistic". Codixel builds it from the shape of a real flame and noise that moves up, so the fire stays one body and breaks into tongues at the top.
 
 ## Dither
 

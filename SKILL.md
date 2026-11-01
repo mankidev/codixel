@@ -119,13 +119,13 @@ Then do what the user decides.
 
 ## 2. Work from the reference, one step at a time
 
-Do one step, show the result as an image, and ask before going on. Wherever there is a choice to make, show candidates instead of a single result: two or three versions side by side in one image, labeled A, B, C, and let the user pick. Use `P.sheet` for this, with the reference as the first item.
+Do one step, show the result as an image, and ask before going on. Show one result, next to the reference in one image made with `P.sheet`. Show a few versions side by side only when the user asks for options.
 
 1. **Remove the background** so only the subject is left. Skip this if the image already has a clear background. `P.removeBg` works when the background is one plain color; if a ring of the old background stays around the edge, add `erode: 1` or `2`. If the edges are busy (a photo, a scene), ask the user for a version with a clear background, or use a background removal tool if one is installed (for example rembg). Then `P.trim`. Show it.
-2. **Turn it into pixels** at the size the user wants: `P.resize`, then `P.quantize`, then `P.cleanup`. If small details like eyes turn into gray spots, quantize at full size first and then `P.resize` with `mode: true`. Show two or three candidates, for example different widths (32, 48, 64) or color counts (8, 12, 16), and let the user pick. Add an outline with `P.outline` only if the user asks for one, and add it to the finished frames, after the bones.
+2. **Turn it into pixels** at the size the user wants: `P.resize`, then `P.quantize`, then `P.cleanup`. If small details like eyes turn into gray spots, quantize at full size first and then `P.resize` with `mode: true`. Pick the width and color count that fit the request and show that one. Add an outline with `P.outline` only if the user asks for one, and add it to the finished frames, after the bones.
 3. **If it moves, give it bones.** Use `P.Rig` for parts that turn at a joint and `P.bend` for long bodies. Read the joint positions off `P.ruler` and show the bones on top of it with `rig.drawBones` at the same scale. Then show `rig.ownerMap()` with `rig.legend()` and fix wrong areas before animating.
-   Turning a small pixel sprite gives jagged edges and broken lines, more so at big angles. If the sprite is small (under about 64 pixels) or the parts must turn far, give the bones to the clean full-size image instead and turn each frame into pixels afterwards, the way it is done for several images below. When unsure, show both ways as candidates.
-4. **Animate it with the bones.** Move with `P.ease` curves so motion speeds up and slows down instead of moving at one speed. Show the frames as a numbered sheet. You cannot see a GIF move, so look at the sheet yourself, and give the user a GIF from `P.gif` so they can see the motion. If the motion could go different ways, show candidates.
+   Turning a small pixel sprite gives jagged edges and broken lines, more so at big angles. If the sprite is small (under about 64 pixels) or the parts must turn far, give the bones to the clean full-size image instead and turn each frame into pixels afterwards, the way it is done for several images below. When unsure, pick one and say which way you used.
+4. **Animate it with the bones.** Move with `P.ease` curves so motion speeds up and slows down instead of moving at one speed. Show the frames as a numbered sheet. You cannot see a GIF move, so look at the sheet yourself, and give the user a GIF from `P.gif` so they can see the motion.
 5. **Put it in the scene.** Show it next to everything else.
 6. **Save it for the game.** Draw every frame into a buffer of the same size, put them together with `P.pack`, and save the PNG. Tell the user the frame size, the number of frames, the columns and the delay. If the game wants one file per frame, save each frame with `P.save` instead.
 
@@ -133,7 +133,7 @@ Do one step, show the result as an image, and ask before going on. Wherever ther
 
 After each step, ask something like:
 
-> "Here are three versions, A, B and C. Which one do you want, or should I change something?"
+> "Here it is. Is it right, or should I change something?"
 
 Go to the next step only when the user says it is right.
 
@@ -143,11 +143,11 @@ When the user says how it should look, for example "realistic", do exactly that.
 
 For any soft change between colors (a sky, shading on a round shape, smoke, fire), keep each color as a flat band and mix only a thin strip where two bands meet, with `P.field` or `P.ditherIndex`. Do not dither the whole area, and do not use a smooth gradient with many colors.
 
-For simple objects drawn directly in code, also start with two or three candidates side by side and ask:
+For simple objects drawn directly in code, show one version and ask:
 
-> "Which one is closer to what you want?"
+> "Is this close to what you want, or should I change something?"
 
-Build on the one the user picks. If they like parts of different candidates, combine those parts and show it again.
+Change what the user points at and show it again.
 
 ## 4. Effects (fire, smoke, beams, explosions)
 
@@ -161,7 +161,7 @@ Effects are not drawn from a reference. You build them in code, frame by frame. 
 - For explosions: gather energy first, then a flash, shock rings, and smoke that rises and slowly thins out.
 - For beams: show thin warning lines first, then the bright beam.
 
-Ask the user what the effect should feel like and if they have an example (a game, a video, a picture), then show two or three candidates as short animations and let them pick. Change speed, size, color and brightness only when the user asks.
+Ask the user what the effect should feel like and if they have an example (a game, a video, a picture), then show one short animation. Change speed, size, color and brightness only when the user asks.
 
 **When the user says "realistic".** This works for any effect: fire, smoke, steam, water, magic, explosions.
 
@@ -172,8 +172,7 @@ Ask the user what the effect should feel like and if they have an example (a gam
 5. Color it in flat bands with dither only where two bands meet. Keep the brightest part small, at the source. If it is too big, the effect turns into a white blob. Edges and tips get the darkest color.
 6. Smoke, steam, fog and mist are not solid and do not glow. Make them see-through with `alpha`, with no bright core. They leave the source as a thin stream (`calm` near 0), curl and spread as they rise (`warp`, a profile that grows with height), and slowly thin out until they are gone. Give them a few very faint bands so the top fades instead of ending in a hard edge.
 7. Add only a few particles. They are not the effect itself.
-8. Make two or three candidates by changing only the numbers (calm and lively, for example), show them side by side, and let the user pick.
-9. Check every candidate on a frame sheet, and fix one thing at a time.
+8. Check it on a frame sheet, and fix one thing at a time by changing the numbers.
 
 `P.Flow`, `P.Flame` and `P.Smoke` are built this way. For a new effect, extend `P.Flow` instead of writing the loop again.
 

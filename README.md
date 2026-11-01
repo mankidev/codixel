@@ -79,11 +79,7 @@ While this README was being written, the AI added a lot of things I didn't ask f
 
 ![Heirs of the Valley, first version vs now](images/hotv_before_after.png)
 
-After every step, look at the result:
-
-- Is it the size you wanted?
-- Does it look the way you described it?
-- Is it the thing you asked for?
+After every step, look at the result. Does it look the way you described it?
 
 If something is wrong, say exactly what is wrong and run the step again. Move on only when the step is right.
 

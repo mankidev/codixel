@@ -32,9 +32,13 @@ This skill comes with `core/pixel.js`, next to this file. Use it instead of writ
 - `P.removeBg(buf, { tol, color, seeds, flood, erode })` removes a plain background. It finds the background color from the image edges and fills inward from them. `tol` (default 48) is how far a color may be from the background and still count as background. `flood: false` also removes background color inside the subject (holes between legs). Soft edges leave a light or dark ring around the subject; `erode: 1` or `2` cuts that many pixels off the outer edge (also `P.erode(buf, n)`).
 - `P.trim(buf, pad)`, `P.crop(buf, x, y, w, h)`, `P.bounds(buf)`.
 - `P.resize(buf, w, h, { mode })` averages the pixels. Leave out `h` to keep the shape (`P.resize(buf, w, { mode: true })` works too). Pixels end up fully solid or fully clear. Averaging blurs small details like eyes into a gray spot; `mode: true` keeps the most common color in each cell instead, use it on an image you already quantized at full size.
-- `P.quantize(buf, n, { palette })` cuts the colors down to `n`, or maps them to a palette you give. Returns `{ buf, palette }`.
-- `P.cleanup(buf, { tol, keepLone })` removes single stray pixels. It keeps a lone pixel when its color is very different from its neighbors (an eye, a highlight). A pixel with no solid neighbor at all is removed unless `keepLone: true` (a spark floating free).
+- `P.quantize(buf, n, { palette, dither })` cuts the colors down to `n`, or maps them to a palette you give. Returns `{ buf, palette }`. `dither: true` mixes the two nearest colors in a thin strip where they meet, so soft shading keeps its steps instead of turning into flat bands.
+- `P.cleanup(buf, { tol, keepLone })` removes single stray pixels. It keeps a lone pixel when its color is very different from its neighbors (an eye, a highlight). A pixel with no solid neighbor at all is removed unless `keepLone: true` (a spark floating free). After dithering, use `tol: 20` or lower, or the dither pixels count as strays and get removed.
+- `P.smoothEdge(buf, { fill })` cleans the silhouette: it removes one pixel bumps, one pixel wide strips and two pixel nubs, and fills one pixel holes and dents. `P.smoothMask(mask, w, h)` does the same on a 0/1 mask. When a subject is made of overlapping parts (leaves, petals, plates), clean each part's mask on its own and put them together after, so the cleanup does not cut gaps where two parts overlap.
+- `P.edgeCheck(buf)` returns `{ nubs, strips, holes }`, the positions of pixels that stick out, one pixel wide strips and holes inside the silhouette.
 - `P.outline(buf, color, { corners })` adds a one pixel outline. The new buffer is 2 pixels wider and taller and everything moves 1 pixel right and down, so joint positions read before the outline are off by one after it.
+- `P.selout(buf, lit, shade, { dir })` adds a one pixel outline in two colors: `lit` on the side the light comes from, `shade` on the other sides. `dir` is where the light comes from, `[-1, -1]` (top left) by default. Take both colors from the sprite's own ramp (a middle color for `lit`, the darkest for `shade`), not black. It grows the buffer like `P.outline`.
+- `P.rimLight(buf, ramp, { dir, steps })` makes the edge pixels that face the light one ramp step lighter. Use it with `P.selout` to make the shape crisp.
 
 **Bones.** For parts that turn at a joint (legs, arms, wings, head):
 
@@ -75,6 +79,10 @@ A wrong area (a shoulder tinted like the head) shows up here, not after the anim
 - `P.pack(frames, { cols, pad })` puts frames of the same size in a grid on a clear background, with no labels and no checker. This is the sprite sheet for the game; `P.sheet` is only for showing. The result has `frame` with `w`, `h`, `cols`, `rows`, `count`.
 
 **Color and motion.** `P.palette(cols, n)`, `P.ramp`, `P.mix`, `P.ditherIndex`, `P.noise`, `P.fbm`, `P.rng(seed)`, `P.ease`.
+
+- `P.hueRamp(n, { hue, shift, sat, satDrop, light })` builds a ramp of `n` colors that shifts in hue: the dark end turns toward blue, the light end toward yellow, by up to `shift` degrees (default 60), and saturation is highest in the middle. `hue` is the middle color in degrees (green about 110, red 0, blue 220). `P.hsl(h, s, l)` gives one color.
+- `P.band(v, n, x, y, strip)` turns a value from 0 to 1 into one of `n` ramp steps. Each step is a flat band, and only a thin strip where two bands meet is mixed with dither, the same width on both sides of the line. Use it instead of `P.ditherIndex` for shading by hand.
+- `P.colorCount(buf)` lists every color with how many pixels use it and its share.
 
 **Scenes and props.** Use these for anything drawn in code that should look real: rock, earth, trees, water, sky, gems, animal bodies.
 
@@ -123,6 +131,8 @@ If you do not know the size or where it will be used, ask that too:
 
 **Who brings references.** A subject that will be turned into pixels (a character, a creature, a vehicle) comes from the user: do not search the web for one unless the user asks. If there is no reference, ask for one. If the user has none, draw it in code.
 
+A simple object drawn in code (a leaf, a crate, a gem, an icon) needs no photos, even when the user asks for it to look real: draw it from what you know of the real thing and build its colors with `P.hueRamp`. Do not download photos for it unless the user asks.
+
 A realistic material, effect or scene built in code (water, waves, sand, rock, fire, smoke, sky, foliage) is different: when the user has no reference, find two to four freely licensed photos yourself (Wikimedia Commons, public domain, CC0) and use them only to look at and to take colors from, never to turn into pixels. Tell the user which photos you used, with links. Download them to a temporary folder (the scratchpad, not the user's project or shared folders) and delete them when the work is done; the user only needs the links.
 
 **Where the reference comes from.** If the user's own photo or drawing, or an image with a license that allows it (public domain, CC0, CC BY), there is nothing to ask. If it looks like someone else's artwork and the result will be published or sold, say so once:
@@ -140,7 +150,7 @@ Then do what the user decides.
 Do one step, show the result as an image, and ask before going on. Show one result, next to the reference in one image made with `P.sheet`. Show a few versions side by side only when the user asks for options.
 
 1. **Remove the background** so only the subject is left. Skip this if the image already has a clear background. `P.removeBg` works when the background is one plain color; if a ring of the old background stays around the edge, add `erode: 1` or `2`. If the edges are busy (a photo, a scene), ask the user for a version with a clear background, or use a background removal tool if one is installed (for example rembg). Then `P.trim`. Show it.
-2. **Turn it into pixels** at the size the user wants: `P.resize`, then `P.quantize`, then `P.cleanup`. If small details like eyes turn into gray spots, quantize at full size first and then `P.resize` with `mode: true`. Pick the width and color count that fit the request and show that one. Add an outline with `P.outline` only if the user asks for one, and add it to the finished frames, after the bones.
+2. **Turn it into pixels** at the size the user wants: `P.resize`, then `P.quantize` with `dither: true`, then `P.cleanup` with `tol: 20`, then `P.smoothEdge`. If small details like eyes turn into gray spots, quantize at full size first and then `P.resize` with `mode: true`. Pick the width and color count that fit the request and show that one. Add an outline with `P.outline` only if the user asks for one, and add it to the finished frames, after the bones.
 3. **If it moves, give it bones.** Use `P.Rig` for parts that turn at a joint and `P.bend` for long bodies. Read the joint positions off `P.ruler` and show the bones on top of it with `rig.drawBones` at the same scale. Then show `rig.ownerMap()` with `rig.legend()` and fix wrong areas before animating.
    Turning a small pixel sprite gives jagged edges and broken lines, more so at big angles. If the sprite is small (under about 64 pixels) or the parts must turn far, give the bones to the clean full-size image instead and turn each frame into pixels afterwards, the way it is done for several images below. When unsure, pick one and say which way you used.
 4. **Animate it with the bones.** Move with `P.ease` curves so motion speeds up and slows down instead of moving at one speed. Show the frames as a numbered sheet. You cannot see a GIF move, so look at the sheet yourself, and give the user a GIF from `P.gif` so they can see the motion.
@@ -159,7 +169,22 @@ Go to the next step only when the user says it is right.
 
 When the user says how it should look, for example "realistic", do exactly that. Do not pick colors, palettes, effects or extra details the user did not ask for.
 
-For any soft change between colors (a sky, shading on a round shape, smoke, fire), keep each color as a flat band and mix only a thin strip where two bands meet, with `P.field` or `P.ditherIndex`. Do not dither the whole area, and do not use a smooth gradient with many colors.
+For any soft change between colors (a sky, shading on a round shape, smoke, fire), keep each color as a flat band and mix only a thin strip where two bands meet, with `P.band` or `P.field`. Do not dither the whole area, and do not use a smooth gradient with many colors. This holds for every piece, not only effects: if a finished sprite has no dither at its band edges, the value range is too narrow (see below).
+
+**Hue shifting.** Build every ramp with `P.hueRamp`, or by hand the same way: darker steps move toward cool (blue, cyan, purple), lighter steps toward warm (yellow, orange), and saturation drops a little at both ends. A ramp that only changes lightness looks flat and dead. The shift only shows when the sprite uses most of the ramp: the value across the object should run over most of it, from the darkest step in the deepest part to the lightest at the brightest part. Check it with `P.colorCount`: if one color covers more than half the object, or the two ends of the ramp are almost unused, widen the range. Both hue shifting and dither come from this range.
+
+**Flat things and round things.** Before shading, decide whether the object is flat and thin or has volume.
+
+- Flat and thin (a leaf, a petal, paper, cloth, a flag, a sign, a wing membrane): do not light it from a surface normal like a dome, it turns puffy and plastic. Its tones come from its own color pattern (a leaf goes from dark at the base to light at the tip), its markings, its veins or folds, the shadow where one part lies on another, and the outline.
+- Round things with volume (stone, fruit, a body, a head, a gem, a barrel): light them from one direction.
+- A flat surface still needs some life: a few structural lines (veins, seams, folds), a small tone difference between the two sides of a fold, and a soft wide color variation from `P.fbm`, never per-pixel grain. Keep it light. When the texture is as strong as the main color change, it is too much; it should never hide it.
+- Details like a midrib, a marking or a stripe move the color by a fixed ramp step (one step lighter), not by adding to the value before dither. Added to the value, they break into scattered specks.
+
+**Shapes.** Build round shapes from round parts joined together: a heart is two circles and a wedge. Cutting one shape out of another (a notch cut with a circle) leaves sharp corners where the cut meets the edge. Natural things that repeat (leaves, petals, fingers) differ a little in angle and size; at even spacing and equal size the silhouette reads as a square or a cross. Parts that repeat must read as separate at 1x, with a gap or a dark crease between them, and parts that join (a stem and a leaf, a joint, a handle) must touch. Thin parts (a stem, a rope, a hair) keep the same width along their length; a step from 2 to 3 pixels at a bend reads as a bump. Color a thin part by its side of the curve, not by its column, or the light and dark pixels swap at every step and it looks broken.
+
+**Silhouette.** After a shape is turned into pixels and before coloring, clean it with `P.smoothEdge` (or `P.smoothMask` per part). One pixel bumps and two pixel nubs look bad.
+
+**Outline and rim.** When the shape does not read well at 1x, or the user says something is missing, show the sprite with and without `P.selout` plus `P.rimLight` side by side and let the user pick. The outline takes its colors from the sprite's own ramp.
 
 For simple objects drawn directly in code, show one version and ask:
 
@@ -288,5 +313,8 @@ A calm area that changes more than about 20% of its pixels every frame is moving
 - Render an image or frames and look at them yourself before showing the user.
 - Never say a step is done without looking at the result.
 - For an animation, look at a numbered frame sheet and at the last frame next to the first.
+- Look at it at 1x, on a plain background, next to the zoomed view. The shape must read at 1x.
+- Measure, do not only look: `P.edgeCheck` must find no nubs, strips or holes in the silhouette; `P.colorCount` must show most of the ramp in use, with no color over half the object; band edges must show a dither strip.
+- Check that every part follows the same light direction, and that parts which should touch do.
 - Do only what was asked. Do not add text, effects, colors or features on your own.
 - When the user says something is wrong, change that one thing, show it again, and ask again.

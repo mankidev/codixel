@@ -791,13 +791,23 @@ P.quantize = (buf, n = 16, opt = {}) => {
     }
   }
   pal = pal.map((c) => c.map(Math.round));
-  const map = new Map(), out = new Buf(buf.w, buf.h);
+  const map = new Map(), out = new Buf(buf.w, buf.h), strip = opt.dither === true ? 1 / 3 : opt.dither || 0;
+  const pick = (rgb) => {
+    const k1 = P.nearest(pal, rgb);
+    if (!strip || pal.length < 2) return [k1, k1, 0];
+    let k2 = -1, bd = Infinity;
+    pal.forEach((p, k) => { if (k !== k1) { const d = P.dist2(p, rgb); if (d < bd) (bd = d), (k2 = k); } });
+    const a = pal[k1], b = pal[k2], ab = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], l = ab[0] ** 2 + ab[1] ** 2 + ab[2] ** 2;
+    const t = l ? P.clamp(((rgb[0] - a[0]) * ab[0] + (rgb[1] - a[1]) * ab[1] + (rgb[2] - a[2]) * ab[2]) / l, 0, 0.5) : 0;
+    return [k1, k2, t];
+  };
   for (let i = 0; i < buf.px.length; i++) {
     const c = buf.px[i];
     if (!(c >>> 24)) continue;
     let k = map.get(c);
-    if (k === undefined) map.set(c, (k = P.nearest(pal, P.unpack(c))));
-    out.px[i] = P.col(pal[k]);
+    if (k === undefined) map.set(c, (k = pick(P.unpack(c))));
+    const x = i % buf.w, y = (i / buf.w) | 0;
+    out.px[i] = P.col(pal[strip && P.bt(x + buf.ox, y + buf.oy) < P.clamp((k[2] - 0.5) / strip + 0.5) ? k[1] : k[0]]);
   }
   return { buf: out, palette: pal };
 };
@@ -841,6 +851,125 @@ P.outline = (buf, color, opt = {}) => {
       }
     }
   return out;
+};
+
+P.band = (v, n, x, y, strip = 1 / 3) => {
+  const f = P.clamp(v) * (n - 1), k = Math.floor(f), fr = f - k;
+  return Math.min(n - 1, k + (P.bt(x, y) < P.clamp((fr - 0.5) / strip + 0.5) ? 1 : 0));
+};
+
+P.hsl = (h, s, l) => {
+  h = (((h % 360) + 360) % 360) / 60;
+  const c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs((h % 2) - 1)), m = l - c / 2;
+  const [r, g, b] = h < 1 ? [c, x, 0] : h < 2 ? [x, c, 0] : h < 3 ? [0, c, x] : h < 4 ? [0, x, c] : h < 5 ? [x, 0, c] : [c, 0, x];
+  return [Math.round((r + m) * 255), Math.round((g + m) * 255), Math.round((b + m) * 255)];
+};
+
+P.hueRamp = (n, opt = {}) => {
+  const hue = opt.hue ?? 110, shift = opt.shift ?? 60, sat = opt.sat ?? 0.55, drop = opt.satDrop ?? 0.35;
+  const [l0, l1] = opt.light ?? [0.12, 0.82];
+  const toward = (h, target, amt) => {
+    const d = ((target - h + 540) % 360) - 180;
+    return h + Math.sign(d) * Math.min(Math.abs(d), amt);
+  };
+  return Array.from({ length: n }, (_, i) => {
+    const t = n > 1 ? i / (n - 1) : 0.5, e = Math.abs(2 * t - 1);
+    const h = toward(hue, t < 0.5 ? 240 : 60, shift * e);
+    return P.col(P.hsl(h, sat * (1 - drop * e), l0 + (l1 - l0) * t));
+  });
+};
+
+P.smoothMask = (m, w, h, opt = {}) => {
+  const g = (a, x, y) => (x < 0 || y < 0 || x >= w || y >= h ? 0 : a[y * w + x]);
+  let cur = m.slice();
+  for (let pass = 0; pass < (opt.passes ?? 4); pass++) {
+    const ero = new Uint8Array(w * h), out = new Uint8Array(w * h);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++)
+      ero[y * w + x] = g(cur, x, y) && g(cur, x - 1, y) && g(cur, x + 1, y) && g(cur, x, y - 1) && g(cur, x, y + 1) ? 1 : 0;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++)
+      out[y * w + x] = g(cur, x, y) && (g(ero, x, y) || g(ero, x - 1, y) || g(ero, x + 1, y) || g(ero, x, y - 1) || g(ero, x, y + 1)) ? 1 : 0;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      if (!out[y * w + x]) continue;
+      const l = g(out, x - 1, y), r = g(out, x + 1, y), u = g(out, x, y - 1), d = g(out, x, y + 1);
+      if (l + r + u + d <= 1 || (l && r && !u && !d) || (u && d && !l && !r)) out[y * w + x] = 0;
+    }
+    if (opt.fill !== false)
+      for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++)
+        if (!out[y * w + x] && g(out, x - 1, y) + g(out, x + 1, y) + g(out, x, y - 1) + g(out, x, y + 1) >= 3) out[y * w + x] = 1;
+    let same = true;
+    for (let i = 0; i < w * h; i++) if (out[i] !== cur[i]) { same = false; break; }
+    cur = out;
+    if (same) break;
+  }
+  return cur;
+};
+
+P.smoothEdge = (buf, opt = {}) => {
+  const W = buf.w, H = buf.h, m = new Uint8Array(W * H);
+  for (let i = 0; i < W * H; i++) m[i] = buf.px[i] >>> 24 ? 1 : 0;
+  const k = P.smoothMask(m, W, H, opt), out = new Buf(W, H);
+  out.ox = buf.ox, out.oy = buf.oy;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = y * W + x;
+    if (!k[i]) continue;
+    if (buf.px[i] >>> 24) { out.px[i] = buf.px[i]; continue; }
+    const votes = new Map();
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nx = x + dx, ny = y + dy;
+      if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+      const c = buf.px[ny * W + nx];
+      if (c >>> 24) votes.set(c, (votes.get(c) || 0) + 1);
+    }
+    let top = 0, best = 0;
+    for (const [c, n] of votes) if (n > best) (best = n), (top = c);
+    out.px[i] = top;
+  }
+  return out;
+};
+
+P.selout = (buf, lit, shade, opt = {}) => {
+  const [dx, dy] = opt.dir ?? [-1, -1], W = buf.w + 2, H = buf.h + 2, out = new Buf(W, H);
+  for (let y = 0; y < buf.h; y++) for (let x = 0; x < buf.w; x++) out.px[(y + 1) * W + x + 1] = buf.px[y * buf.w + x];
+  const src = out.px.slice(), s = (x, y) => x >= 0 && y >= 0 && x < W && y < H && src[y * W + x] >>> 24;
+  const cl = P.col(lit), cs = P.col(shade);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    if (s(x, y)) continue;
+    const away = (dx && s(x - dx, y)) || (dy && s(x, y - dy)), toward = (dx && s(x + dx, y)) || (dy && s(x, y + dy));
+    if (away || toward) out.px[y * W + x] = away && !toward ? cl : cs;
+  }
+  return out;
+};
+
+P.rimLight = (buf, ramp, opt = {}) => {
+  const [dx, dy] = opt.dir ?? [-1, -1], steps = opt.steps ?? 1, cols = ramp.map(P.col), W = buf.w, H = buf.h, out = new Buf(W, H);
+  out.px.set(buf.px);
+  const s = (x, y) => x >= 0 && y >= 0 && x < W && y < H && buf.px[y * W + x] >>> 24;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    if (!s(x, y) || ((!dx || s(x + dx, y)) && (!dy || s(x, y + dy)))) continue;
+    const i = cols.indexOf(buf.px[y * W + x]);
+    if (i >= 0) out.px[y * W + x] = cols[Math.min(cols.length - 1, i + steps)];
+  }
+  return out;
+};
+
+P.edgeCheck = (buf) => {
+  const W = buf.w, H = buf.h, s = (x, y) => (x >= 0 && y >= 0 && x < W && y < H && buf.px[y * W + x] >>> 24 ? 1 : 0);
+  const r = { nubs: [], strips: [], holes: [] };
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const l = s(x - 1, y), rt = s(x + 1, y), u = s(x, y - 1), d = s(x, y + 1), n = l + rt + u + d;
+    if (s(x, y)) {
+      if (n <= 1) r.nubs.push([x, y]);
+      else if (n === 2 && ((l && rt) || (u && d))) r.strips.push([x, y]);
+    } else if (x > 0 && y > 0 && x < W - 1 && y < H - 1 && n >= 3) r.holes.push([x, y]);
+  }
+  return r;
+};
+
+P.colorCount = (buf) => {
+  const m = new Map();
+  let total = 0;
+  for (const c of buf.px) if (c >>> 24) (m.set(c, (m.get(c) || 0) + 1), total++);
+  return [...m].sort((a, b) => b[1] - a[1]).map(([c, n]) => ({ col: P.unpack(c), n, share: n / total }));
 };
 
 P.segDist2 = (px, py, ax, ay, bx, by) => {

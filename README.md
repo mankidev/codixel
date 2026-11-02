@@ -73,6 +73,20 @@ Pixel art has only a few colors, so a sky or a ball needs a trick to change soft
 - Dither everywhere: soft, but grainy.
 - Bands and a dither strip: flat colors, mixed only where two bands meet. Codixel uses this one.
 
+## Hue shifting
+
+![Five greens without and with hue shifting](images/hue_shift.png)
+
+Left: without hue shifting. Right: with hue shifting.
+
+Hue shifting changes the hue of each color in a palette along with its lightness.
+
+## Outline
+
+![The same clover with no outline, an outline, and an outline with rim light](images/outline.png)
+
+The outline takes its colors from the sprite. Rim light makes the edges that face the light one step lighter.
+
 ## Sound
 
 Don't let the AI make the sounds for your game. AI-made sounds are easy to spot. Have it find sounds on the internet instead.

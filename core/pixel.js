@@ -879,6 +879,28 @@ P.hueRamp = (n, opt = {}) => {
   });
 };
 
+P.toHsl = (c) => {
+  const [r, g, b] = (typeof c === "number" ? P.unpack(c) : c).map((v) => v / 255);
+  const M = Math.max(r, g, b), m = Math.min(r, g, b), d = M - m, l = (M + m) / 2;
+  if (!d) return [0, 0, l];
+  const s = d / (1 - Math.abs(2 * l - 1));
+  const h = M === r ? ((g - b) / d) % 6 : M === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return [(h * 60 + 360) % 360, s, l];
+};
+
+P.hueRampFrom = (cols, n, opt = {}) => {
+  const hsl = cols.map(P.toHsl), w = hsl.map(([, s]) => s + 0.01);
+  let x = 0, y = 0;
+  hsl.forEach(([h], i) => ((x += Math.cos((h * Math.PI) / 180) * w[i]), (y += Math.sin((h * Math.PI) / 180) * w[i])));
+  const sats = hsl.map(([, s]) => s).sort((a, b) => a - b), ls = hsl.map(([, , l]) => l);
+  return P.hueRamp(n, {
+    hue: ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360,
+    sat: sats[sats.length >> 1],
+    light: [Math.min(...ls), Math.max(...ls)],
+    ...opt,
+  });
+};
+
 P.smoothMask = (m, w, h, opt = {}) => {
   const g = (a, x, y) => (x < 0 || y < 0 || x >= w || y >= h ? 0 : a[y * w + x]);
   let cur = m.slice();

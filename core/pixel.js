@@ -867,7 +867,7 @@ P.hsl = (h, s, l) => {
 
 P.hueRamp = (n, opt = {}) => {
   const hue = opt.hue ?? 110, shift = opt.shift ?? 60, sat = opt.sat ?? 0.55, drop = opt.satDrop ?? 0.35;
-  const [l0, l1] = opt.light ?? [0.12, 0.82];
+  const [l0, l1] = opt.light ?? [0.12, 0.62];
   const toward = (h, target, amt) => {
     const d = ((target - h + 540) % 360) - 180;
     return h + Math.sign(d) * Math.min(Math.abs(d), amt);
@@ -992,6 +992,36 @@ P.colorCount = (buf) => {
   let total = 0;
   for (const c of buf.px) if (c >>> 24) (m.set(c, (m.get(c) || 0) + 1), total++);
   return [...m].sort((a, b) => b[1] - a[1]).map(([c, n]) => ({ col: P.unpack(c), n, share: n / total }));
+};
+
+P.pixelPerfect = (m, w, h) => {
+  const out = m.slice(), g = (x, y) => (x < 0 || y < 0 || x >= w || y >= h ? 0 : out[y * w + x]);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    if (!out[y * w + x]) continue;
+    const l = g(x - 1, y), r = g(x + 1, y), u = g(x, y - 1), d = g(x, y + 1);
+    if (l + r !== 1 || u + d !== 1) continue;
+    const sx = l ? -1 : 1, sy = u ? -1 : 1;
+    if (!g(x + sx, y + sy) && !g(x - sx, y) && !g(x, y - sy)) out[y * w + x] = 0;
+  }
+  return out;
+};
+
+P.partAreas = (masks) => {
+  const top = new Int16Array(masks[0].length).fill(-1);
+  masks.forEach((m, i) => { for (let j = 0; j < m.length; j++) if (m[j]) top[j] = i; });
+  const n = masks.map(() => 0);
+  for (const t of top) if (t >= 0) n[t]++;
+  return n;
+};
+
+P.balanceParts = (make, count, opt = {}) => {
+  const want = opt.want ?? Array(count).fill(1), s = Array(count).fill(1);
+  for (let it = 0; it < (opt.iters ?? 12); it++) {
+    const a = P.partAreas(make(s)), mean = a.reduce((p, q, i) => p + q / want[i], 0) / count;
+    for (let i = 0; i < count; i++) s[i] *= Math.pow((mean * want[i]) / Math.max(1, a[i]), 0.25);
+  }
+  const masks = make(s);
+  return { scales: s, masks, areas: P.partAreas(masks) };
 };
 
 P.segDist2 = (px, py, ax, ay, bx, by) => {

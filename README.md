@@ -77,8 +77,6 @@ Pixel art has only a few colors, so a sky or a ball needs a trick to change soft
 
 ![Five greens without and with hue shifting](images/hue_shift.png)
 
-Left: without hue shifting. Right: with hue shifting.
-
 Hue shifting changes the hue of each color in a palette along with its lightness.
 
 ## Outline
